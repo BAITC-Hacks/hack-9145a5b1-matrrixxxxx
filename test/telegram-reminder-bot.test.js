@@ -47,6 +47,18 @@ test('start link connects a private chat once and offers event actions', async (
   });
 });
 
+test('start link requires a present, valid and unexpired expiry time', async () => {
+  for (const linkExpiresAt of [undefined, null, 'not-a-date', new Date(FIXED_NOW).toISOString()]) {
+    await withBot([futureEvent({ linkExpiresAt })], async ({ bot, calls, storePath }) => {
+      await bot.processUpdate({ message: { chat: { id: 77, type: 'private' }, text: '/start valid-link' } });
+      const event = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0];
+      assert.equal(event.telegramChatId, null);
+      assert.equal(event.linkToken, 'valid-link');
+      assert.match(calls.at(-1).payload.text, /уже использована или истекла/i);
+    });
+  }
+});
+
 test('events command accepts bot mentions and does not answer in groups', async () => {
   await withBot([futureEvent({ telegramChatId: '77' })], async ({ bot, calls }) => {
     await bot.processUpdate({ message: { chat: { id: 77, type: 'private' }, text: '/events@CareerQuestRemindBot' } });

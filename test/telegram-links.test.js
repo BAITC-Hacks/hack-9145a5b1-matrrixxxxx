@@ -107,6 +107,62 @@ test('renewal invalidates the old link without another enrollment and new link i
   });
 });
 
+test('renewal rehydrates schedule, timezone and status from the current Career Quest session', async () => {
+  await withLinks(({ directory, storePath, links, actor, input, careerStore, advance }) => {
+    const first = links.create(actor, input);
+    const careerStorePath = path.join(directory, 'career-store.json');
+    const fixture = JSON.parse(fs.readFileSync(careerStorePath, 'utf8'));
+    const enrollment = fixture.enrollments.find(item => item.id === input.careerEnrollmentId);
+    const session = fixture.sessions.find(item => item.id === enrollment.sessionId);
+    const activity = fixture.activities.find(item => item.id === enrollment.activityId);
+    const nextStart = new Date(FIXED_NOW + 5 * 24 * 60 * 60 * 1000);
+    const nextEnd = new Date(nextStart.getTime() + 150 * 60 * 1000);
+    session.startsAt = nextStart.toISOString();
+    session.endsAt = nextEnd.toISOString();
+    session.timezone = 'UTC';
+    session.registrationDeadline = new Date(nextStart.getTime() - 60 * 60 * 1000).toISOString();
+    session.cancellationDeadline = new Date(nextStart.getTime() - 2 * 60 * 60 * 1000).toISOString();
+    activity.title = 'System Design: перенесённая сессия';
+    fs.writeFileSync(careerStorePath, JSON.stringify(fixture, null, 2));
+
+    // The canonical enrollment has changed after the original projection was
+    // issued; renewal must not reuse the old reminder snapshot.
+    assert.equal(careerStore.confirmEnrollment(input.careerEnrollmentId).status, 'confirmed');
+    advance(1000);
+    const renewed = links.renew(actor, first.id);
+    const reminder = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0];
+    assert.equal(reminder.activityTitle, 'System Design: перенесённая сессия');
+    assert.equal(reminder.sessionId, session.id);
+    assert.equal(reminder.occursAt, nextStart.toISOString());
+    assert.equal(reminder.timezone, 'UTC');
+    assert.equal(reminder.durationMinutes, 150);
+    assert.equal(reminder.status, 'confirmed');
+    assert.deepEqual(reminder.sentReminders, []);
+    assert.equal(Date.parse(renewed.linkExpiresAt), FIXED_NOW + 1000 + LINK_TOKEN_TTL_MS);
+  });
+});
+
+test('renewal refuses a reminder whose canonical enrollment is no longer active', async () => {
+  await withLinks(({ directory, links, actor, input }) => {
+    const reminder = links.create(actor, input);
+    const careerStorePath = path.join(directory, 'career-store.json');
+    const fixture = JSON.parse(fs.readFileSync(careerStorePath, 'utf8'));
+    fixture.enrollments.find(item => item.id === input.careerEnrollmentId).status = 'cancelled';
+    fs.writeFileSync(careerStorePath, JSON.stringify(fixture, null, 2));
+    assert.throws(() => links.renew(actor, reminder.id), { code: 'CONFLICT' });
+  });
+});
+
+test('an enrolled participant can connect Telegram after registration closes but before the session starts', async () => {
+  await withLinks(({ directory, links, actor, input, careerEnrollment }) => {
+    const careerStorePath = path.join(directory, 'career-store.json');
+    const fixture = JSON.parse(fs.readFileSync(careerStorePath, 'utf8'));
+    fixture.sessions.find(item => item.id === careerEnrollment.sessionId).registrationDeadline = '2020-01-01T00:00:00.000Z';
+    fs.writeFileSync(careerStorePath, JSON.stringify(fixture, null, 2));
+    assert.doesNotThrow(() => links.create(actor, input));
+  });
+});
+
 test('an expired link cannot connect and can be renewed for a future event', async () => {
   await withLinks(async ({ links, actor, input, bot, advance }) => {
     const first = links.create(actor, input);

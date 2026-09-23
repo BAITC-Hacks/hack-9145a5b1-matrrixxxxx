@@ -40,7 +40,7 @@
 
 - `GET /api/v1/me/enrollments` возвращает только записи текущего сотрудника.
 - `PATCH /api/v1/enrollments/:id/cancel` доступен только владельцу до `cancellationDeadline`. Освобождённое место получает первый сотрудник из листа ожидания; повторная отмена идемпотентна.
-- `GET /api/v1/enrollments/:id/calendar.ics` доступен только владельцу и возвращает `text/calendar` с `DTSTART`/`DTEND` канонической сессии. В development UI файл загружается через `fetch` с actor header, а не через открытую ссылку.
+- `GET /api/v1/enrollments/:id/calendar.ics` доступен только владельцу для записи со статусом `enrolled` или `confirmed` и для неотменённой сессии. Для `waitlisted`, `cancelled` и отменённой сессии сервер возвращает `409 CONFLICT` без calendar payload. В development UI файл загружается через `fetch` с actor header, а не через открытую ссылку.
 
 ## `POST /api/v1/enrollments/:id/evidence`
 
