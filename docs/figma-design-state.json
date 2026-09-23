@@ -2,7 +2,7 @@
   "fileKey": "T9wOCt9FekAskcs62vKeFm",
   "url": "https://www.figma.com/design/T9wOCt9FekAskcs62vKeFm",
   "runId": "career-quest-2026-09-23",
-  "phase": "foundations",
+  "phase": "complete",
   "entities": {
     "pages": [
       {
@@ -416,9 +416,7 @@
     }
   },
   "createdNodeIds": [],
-  "completedSteps": [
-    "P0"
-  ],
+  "completedSteps": 4,
   "results": [
     {
       "description": "P2.b Branded cover",
@@ -1039,6 +1037,60 @@
           "text": "{\"mutatedNodeIds\":[\"I34:357;13:13\",\"I34:391;13:5\",\"I34:391;13:7\",\"I34:391;13:9\",\"I34:391;13:11\",\"I34:391;13:15\",\"I22:306;9:17\",\"5:7\"]}"
         }
       ]
+    },
+    {
+      "description": "mobile active-state final QA",
+      "result": [
+        {
+          "type": "text",
+          "text": "Error: in set_fills: Property \"fills\" failed validation: Expected object, received array at index 0\n    at set (<input>:75:11)\n    at <anonymous> (PLUGIN_3_SOURCE:12:295)\n"
+        },
+        {
+          "type": "text",
+          "text": "Figma Debug UUID: 8d2d8b0c-9c21-43c7-b9e9-bcecd294e419"
+        }
+      ]
+    },
+    {
+      "description": "final read-only audit",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"linkedNodes\":57,\"targetCount\":57,\"missingTargets\":[],\"textOverflow\":[],\"flowStartingPoints\":[{\"nodeId\":\"24:331\",\"name\":\"Career Quest · Основной сценарий\"},{\"nodeId\":\"15:2\",\"name\":\"Сотрудник · Мой обзор\"},{\"nodeId\":\"16:135\",\"name\":\"Руководитель · Проверка результата\"}],\"pages\":[{\"id\":\"0:1\",\"name\":\"00 · Cover\",\"frames\":[{\"id\":\"6:2\",\"name\":\"Career Quest · Design System & Product\",\"width\":1440,\"height\":900}],\"components\":0,\"instances\":0},{\"id\":\"5:2\",\"name\":\"01 · Getting started\",\"frames\":[{\"id\":\"6:8\",\"name\":\"Getting started · Guide\",\"width\":1440,\"height\":542}],\"components\":0,\"instances\":0},{\"id\":\"5:3\",\"name\":\"02 · Foundations\",\"frames\":[{\"id\":\"6:14\",\"name\":\"Foundations · Tokens\",\"width\":1440,\"height\":888}],\"components\":0,\"instances\":0},{\"id\":\"5:4\",\"name\":\"03 · Button\",\"frames\":[{\"id\":\"8:2\",\"name\":\"Button · Usage\",\"width\":600,\"height\":160},{\"id\":\"8:21\",\"name\":\"CQ / Button\",\"width\":1080,\"height\":164}],\"components\":8,\"instances\":0},{\"id\":\"5:5\",\"name\":\"04 · Card\",\"frames\":[{\"id\":\"9:2\",\"name\":\"Card · Usage\",\"width\":520,\"height\":182},{\"id\":\"10:4\",\"name\":\"CQ / Card\",\"width\":952,\"height\":334},{\"id\":\"20:4\",\"name\":\"CQ / Table row\",\"width\":1080,\"height\":76},{\"id\":\"36:446\",\"name\":\"CQ / Field\",\"width\":616,\"height\":82}],\"components\":4,\"instances\":2},{\"id\":\"5:6\",\"name\":\"05 · Navigation\",\"frames\":[{\"id\":\"11:2\",\"name\":\"Navigation · Usage\",\"width\":600,\"height\":160},{\"id\":\"12:2\",\"name\":\"CQ / Navigation item\",\"width\":264,\"height\":156},{\"id\":\"13:2\",\"name\":\"CQ / Sidebar\",\"width\":264,\"height\":960},{\"id\":\"14:9\",\"name\":\"CQ / Topbar\",\"width\":1176,\"height\":76},{\"id\":\"29:8\",\"name\":\"CQ / Mobile navigation\",\"width\":358,\"height\":60}],\"components\":5,\"instances\":6},{\"id\":\"5:7\",\"name\":\"06 · Desktop\",\"frames\":[{\"id\":\"15:2\",\"name\":\"01 · Мой обзор · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"16:27\",\"name\":\"02 · Каталог активностей · Desktop\",\"width\":1440,\"height\":1054},{\"id\":\"16:54\",\"name\":\"03 · Детали активности · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"16:81\",\"name\":\"04 · Мои активности · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"16:108\",\"name\":\"05 · Карьерный маршрут · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"16:135\",\"name\":\"06 · Проверка результата · Manager\",\"width\":1440,\"height\":1010},{\"id\":\"16:162\",\"name\":\"07 · HR overview · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"16:189\",\"name\":\"08 · Пользователи и роли · Admin\",\"width\":1440,\"height\":1000},{\"id\":\"24:331\",\"name\":\"09 · Корпоративный вход · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"27:336\",\"name\":\"10 · Отправить результат · Flow\",\"width\":640,\"height\":466},{\"id\":\"28:338\",\"name\":\"11 · Запись создана\",\"width\":640,\"height\":326},{\"id\":\"28:346\",\"name\":\"12 · Результат на проверке\",\"width\":640,\"height\":348},{\"id\":\"28:354\",\"name\":\"13 · Результат подтверждён\",\"width\":640,\"height\":326},{\"id\":\"34:356\",\"name\":\"14 · Профиль · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"34:390\",\"name\":\"15 · Уведомления и настройки · Desktop\",\"width\":1440,\"height\":1000},{\"id\":\"34:424\",\"name\":\"16 · Редактор активности · HR\",\"width\":1440,\"height\":1000}],\"components\":0,\"instances\":177},{\"id\":\"5:8\",\"name\":\"07 · Mobile\",\"frames\":[{\"id\":\"30:2\",\"name\":\"01 · Обзор · Mobile\",\"width\":390,\"height\":816},{\"id\":\"30:5\",\"name\":\"02 · Каталог · Mobile\",\"width\":390,\"height\":900},{\"id\":\"30:8\",\"name\":\"03 · Активность · Mobile\",\"width\":390,\"height\":844}],\"components\":0,\"instances\":16},{\"id\":\"5:9\",\"name\":\"08 · States\",\"frames\":[{\"id\":\"32:2\",\"name\":\"Universal states · Product contract\",\"width\":1440,\"height\":750}],\"components\":0,\"instances\":10}]}"
+        }
+      ]
+    },
+    {
+      "description": "mobile active-state correction successful",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"mutatedNodeIds\":[\"I31:38;29:9\",\"I31:38;29:10\",\"I31:56;29:9\",\"I31:56;29:10\"]}"
+        }
+      ]
     }
-  ]
+  ],
+  "summary": {
+    "fileKey": "T9wOCt9FekAskcs62vKeFm",
+    "url": "https://www.figma.com/design/T9wOCt9FekAskcs62vKeFm",
+    "pages": 9,
+    "desktopScreens": 12,
+    "desktopFlowStates": 4,
+    "mobileScreens": 3,
+    "universalStates": 5,
+    "components": 17,
+    "componentSets": 3,
+    "instances": 211,
+    "variables": 28,
+    "textStyles": 5,
+    "desktopPrototypeLinks": 57,
+    "missingPrototypeTargets": 0,
+    "textOverflowInInstances": 0,
+    "limits": [
+      "Representative editable Figma screens, not every website route mirrored.",
+      "Mobile screens are visual responsive references, not a fully wired mobile prototype.",
+      "Primary desktop workflow and employee navigation linked; not every utility action wired.",
+      "Figma inputs and settings are illustrative; actual working forms exist in website implementation."
+    ]
+  }
 }
