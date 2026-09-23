@@ -950,6 +950,68 @@
           "text": "{\"field\":\"36:446\",\"label\":\"Label#36:0\",\"value\":\"Value#36:1\",\"createdNodeIds\":[\"36:446\",\"36:447\",\"36:448\"]}"
         }
       ]
+    },
+    {
+      "description": "editor fields",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"form\":\"37:440\",\"createdNodeIds\":[\"37:439\",\"37:440\",\"37:441\",\"37:442\",\"I37:442;36:447\",\"I37:442;36:448\",\"37:445\",\"I37:445;36:447\",\"I37:445;36:448\",\"37:448\",\"I37:448;36:447\",\"I37:448;36:448\",\"37:451\",\"I37:451;36:447\",\"I37:451;36:448\",\"37:454\",\"I37:454;9:6\",\"I37:454;9:7\",\"I37:454;9:8\",\"I37:454;9:9\",\"I37:454;9:10\",\"I37:454;9:10;8:6\"],\"mutatedNodeIds\":[\"34:428\"]}"
+        }
+      ]
+    },
+    {
+      "description": "editor complete",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"38:453\",\"38:454\",\"I38:454;8:14\",\"38:456\",\"I38:456;8:6\",\"38:458\"],\"mutatedNodeIds\":[\"37:440\"]}"
+        }
+      ]
+    },
+    {
+      "description": "final layout correction",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"mutatedNodeIds\":[\"16:27\",\"16:28\",\"16:135\",\"16:136\",\"I34:357;13:5\",\"I34:357;13:7\",\"I34:357;13:9\",\"I34:357;13:11\",\"I34:357;13:13\",\"I34:357;13:15\",\"I34:391;13:5\",\"I34:391;13:7\",\"I34:391;13:9\",\"I34:391;13:11\",\"I34:391;13:13\",\"I34:391;13:15\",\"I34:425;13:5\",\"I34:425;13:7\",\"I34:425;13:9\",\"I34:425;13:11\",\"I34:425;13:13\",\"I34:425;13:15\",\"I34:425;13:17\",\"I34:427;14:12\"]}"
+        }
+      ]
+    },
+    {
+      "description": "navigation links 0",
+      "result": [
+        {
+          "type": "text",
+          "text": "Error: Reaction at index 0 was invalid (destination 15:2 was rejected — the destination node may not exist, the source may not be a valid prototype source, or the destination may not be reachable from this source; for NAVIGATE actions, destinations must be a different top-level frame on the same page)\n    at <anonymous> (<input>:1:22)\n"
+        },
+        {
+          "type": "text",
+          "text": "Figma Debug UUID: b19a468b-60b3-4362-885c-c3e5a45edfea"
+        }
+      ]
+    },
+    {
+      "description": "navigation links 10",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"mutatedNodeIds\":[\"I16:28;13:13\",\"I16:28;13:15\",\"I16:55;13:5\",\"I16:55;13:7\",\"I16:55;13:9\",\"I16:55;13:11\",\"I16:55;13:13\",\"I16:55;13:15\",\"I16:82;13:5\",\"I16:82;13:7\"]}"
+        }
+      ]
+    },
+    {
+      "description": "navigation links 20",
+      "result": [
+        {
+          "type": "text",
+          "text": "Error: Reaction at index 0 was invalid (destination 16:81 was rejected — the destination node may not exist, the source may not be a valid prototype source, or the destination may not be reachable from this source; for NAVIGATE actions, destinations must be a different top-level frame on the same page)\n    at <anonymous> (<input>:1:22)\n"
+        },
+        {
+          "type": "text",
+          "text": "Figma Debug UUID: abec2df9-a27a-43b7-9e12-bac2c39ec96f"
+        }
+      ]
     }
   ]
 }
