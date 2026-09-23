@@ -159,6 +159,14 @@ function assertEmployeeOwner(actor, enrollment) {
     throw new CareerStoreError('FORBIDDEN', 'Действие доступно только сотруднику-владельцу записи');
   }
 }
+function assertCalendarEligibility(enrollment, context) {
+  if (!['enrolled', 'confirmed'].includes(enrollment.status)) {
+    throw new CareerStoreError('CONFLICT', 'Календарь доступен только для активной записи на сессию');
+  }
+  if (!context.session || context.session.status === 'cancelled') {
+    throw new CareerStoreError('CONFLICT', 'Календарь недоступен: сессия отменена или отсутствует');
+  }
+}
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
@@ -261,9 +269,10 @@ const server = http.createServer(async (req, res) => {
       const actor = requireCareerActor(req, res); if (!actor) return;
       try {
         const enrollmentId = decodeURIComponent(calendarMatch[1]);
-        const enrollment = careerStore.getEnrollment(enrollmentId);
-        assertEmployeeOwner(actor, enrollment);
-        return sendCalendar(res, careerStore.getEnrollmentContext(enrollmentId));
+        const context = careerStore.getEnrollmentContext(enrollmentId);
+        assertEmployeeOwner(actor, context.enrollment);
+        assertCalendarEligibility(context.enrollment, context);
+        return sendCalendar(res, context);
       } catch (error) { return sendCareerError(res, error); }
     }
     const evidenceMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/evidence$/);

@@ -9,10 +9,11 @@ const { webcrypto } = require('node:crypto');
 // focus, native validation and the employee -> manager interaction.
 function harness() {
   const listeners = {};
+  const windowListeners = {};
   const elements = new Map();
   const makeElement = () => ({innerHTML:'',textContent:'',dataset:{},classList:{add(){},remove(){},toggle(){}},querySelector(){return null;},addEventListener(){},focus(){},close(){this.open=false;},showModal(){this.open=true;}});
   const storage = new Map();
-  const context = {console,crypto:webcrypto,URL,URLSearchParams,Blob,FormData,Date,Intl,setTimeout(){return 1;},clearTimeout(){},location:{hash:''},innerWidth:1440,scrollTo(){},addEventListener(){},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};
+  const context = {console,crypto:webcrypto,URL,URLSearchParams,Blob,FormData,Date,Intl,setTimeout(){return 1;},clearTimeout(){},location:{hash:''},innerWidth:1440,scrollTo(){},addEventListener(name,callback){windowListeners[name]=callback;},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};
   context.document={body:makeElement(),activeElement:null,getElementById(id){if(!elements.has(id))elements.set(id,makeElement());return elements.get(id);},querySelector(){return null;},querySelectorAll(){return [];},addEventListener(name,callback){listeners[name]=callback;}};
   context.window=context;
   vm.createContext(context);
@@ -22,7 +23,7 @@ function harness() {
   const end=source.lastIndexOf('})();');
   source=source.slice(0,end)+`window.testApi={db,calculateReadiness,promoteWaitlist,confirmEnrollment,catalogPage,activityEditor,render,setRole(role){session={role};},setView(value){view=value;}};`+source.slice(end);
   vm.runInContext(source,context);
-  return {context,api:context.testApi,elements,listeners,storage};
+  return {context,api:context.testApi,elements,listeners,windowListeners,storage};
 }
 
 test('all role surfaces and detail routes render a meaningful page',()=>{
@@ -54,4 +55,12 @@ test('enrollment is idempotent and waitlist promotes FIFO when a place opens',()
 
 test('skip link focuses main without changing the SPA route',()=>{
   const {context,listeners,elements}=harness();context.location.hash='#/app/home';let prevented=false,focused=false;const main=elements.get('main')||{focus(){}};main.focus=()=>focused=true;elements.set('main',main);listeners.click({target:{closest:selector=>selector==='.skip-link'?{}:null},preventDefault(){prevented=true;}});assert.ok(prevented&&focused);assert.equal(context.location.hash,'#/app/home');
+});
+
+test('resizing restores desktop navigation without discarding the page',()=>{
+  const {context,elements,windowListeners}=harness();const app=elements.get('app'),html=app.innerHTML;
+  const sidebar={inert:false,classList:{remove(){}}},main={inert:false};
+  app.querySelector=selector=>selector==='.sidebar'?sidebar:selector==='.main'?main:null;
+  context.innerWidth=390;windowListeners.resize();assert.equal(sidebar.inert,true);assert.equal(main.inert,false);
+  context.innerWidth=1440;windowListeners.resize();assert.equal(sidebar.inert,false);assert.equal(main.inert,false);assert.equal(app.innerHTML,html);
 });

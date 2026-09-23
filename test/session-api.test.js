@@ -12,11 +12,13 @@ const { createTelegramReminderBot } = require('../lib/telegram-reminder-bot');
 
 const TELEGRAM = { token: '123456:session-api-fixture', username: 'CareerQuestRemindBot' };
 
-async function withServer(run) {
+async function withServer(run, mutateFixture = null) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'career-quest-session-api-'));
   const dataDirectory = path.join(directory, 'data');
   fs.mkdirSync(dataDirectory, { recursive: true });
-  fs.writeFileSync(path.join(dataDirectory, 'career-store.json'), JSON.stringify(seedStore()));
+  const fixture = seedStore();
+  if (mutateFixture) mutateFixture(fixture);
+  fs.writeFileSync(path.join(dataDirectory, 'career-store.json'), JSON.stringify(fixture));
   fs.copyFileSync(path.join(__dirname, '..', 'server.js'), path.join(directory, 'server.js'));
   fs.mkdirSync(path.join(directory, 'lib'));
   for (const file of ['career-store.js', 'telegram-links.js', 'telegram-reminder-bot.js']) {
@@ -135,12 +137,57 @@ test('session enrollment derives ownership and protects cancel, calendar, and re
     const cancelled = await request('/api/v1/enrollments/' + encodeURIComponent(created.body.enrollment.id) + '/cancel', { method: 'PATCH' });
     assert.equal(cancelled.status, 200);
     assert.equal(cancelled.body.enrollment.status, 'cancelled');
+    const calendarAfterCancellation = await request(calendarPath);
+    assert.equal(calendarAfterCancellation.status, 409);
+    assert.equal(calendarAfterCancellation.body.code, 'CONFLICT');
+    assert.doesNotMatch(calendarAfterCancellation.raw, /BEGIN:VCALENDAR/);
 
     const listed = await request('/api/telegram/enrollments');
     assert.equal(listed.status, 200);
     assert.equal(listed.body.enrollments[0].status, 'cancelled');
     assert.equal('telegramChatId' in listed.body.enrollments[0], false);
     assert.equal('linkToken' in listed.body.enrollments[0], false);
+  });
+});
+
+test('calendar allows enrolled or confirmed owners only and rejects waitlisted, cancelled, and cancelled-session records', async () => {
+  await withServer(async ({ request }) => {
+    for (const enrollmentId of ['EN_CALENDAR_ENROLLED', 'EN_CALENDAR_CONFIRMED']) {
+      const calendar = await request('/api/v1/enrollments/' + enrollmentId + '/calendar');
+      assert.equal(calendar.status, 200);
+      assert.match(calendar.headers.get('content-type'), /^text\/calendar/);
+    }
+
+    for (const enrollmentId of ['EN_CALENDAR_WAITLISTED', 'EN_CALENDAR_CANCELLED', 'EN_CALENDAR_CANCELLED_SESSION']) {
+      const calendar = await request('/api/v1/enrollments/' + enrollmentId + '/calendar.ics');
+      assert.equal(calendar.status, 409);
+      assert.equal(calendar.body.code, 'CONFLICT');
+      assert.doesNotMatch(calendar.raw, /BEGIN:VCALENDAR/);
+    }
+  }, fixture => {
+    const baseSession = fixture.sessions.find(item => item.id === 'SES_SYSTEM_DESIGN_OCT');
+    const calendarSessions = [
+      ['SES_CALENDAR_ENROLLED', 'scheduled'],
+      ['SES_CALENDAR_CONFIRMED', 'scheduled'],
+      ['SES_CALENDAR_WAITLISTED', 'scheduled'],
+      ['SES_CALENDAR_CANCELLED', 'scheduled'],
+      ['SES_CALENDAR_CANCELLED_SESSION', 'cancelled']
+    ];
+    for (const [id, status] of calendarSessions) fixture.sessions.push({ ...baseSession, id, status });
+    const timestamp = new Date().toISOString();
+    const records = [
+      ['EN_CALENDAR_ENROLLED', 'SES_CALENDAR_ENROLLED', 'enrolled'],
+      ['EN_CALENDAR_CONFIRMED', 'SES_CALENDAR_CONFIRMED', 'confirmed'],
+      ['EN_CALENDAR_WAITLISTED', 'SES_CALENDAR_WAITLISTED', 'waitlisted'],
+      ['EN_CALENDAR_CANCELLED', 'SES_CALENDAR_CANCELLED', 'cancelled'],
+      ['EN_CALENDAR_CANCELLED_SESSION', 'SES_CALENDAR_CANCELLED_SESSION', 'confirmed']
+    ];
+    for (const [id, sessionId, status] of records) {
+      fixture.enrollments.push({
+        id, employeeId: 'E0028', activityId: 'ACT_SYSTEM_DESIGN_LAB', sessionId, status,
+        evidence: null, reminderEnrollmentId: null, createdAt: timestamp, updatedAt: timestamp
+      });
+    }
   });
 });
 
