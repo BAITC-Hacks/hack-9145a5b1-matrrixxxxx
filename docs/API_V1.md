@@ -32,6 +32,18 @@
 
 Переводит enrollment из `enrolled`/`in_progress` в `submitted` и сохраняет evidence.
 
+## Проверка результатов
+
+`GET /api/v1/reviews` возвращает результаты в статусе `submitted`: manager видит только прямых подчинённых, HR и admin — всю очередь. `GET /api/v1/reviews?scope=history` возвращает решения `verified` и `revision` в той же области доступа.
+
+`POST /api/v1/enrollments/:id/review` доступен manager прямого подчинённого, HR и admin. Тело запроса:
+
+```json
+{ "decision": "verified", "comment": "Хорошо раскрыты компромиссы и сценарий масштабирования." }
+```
+
+Допустимые решения — `verified` и `revision`; комментарий обязателен (от 10 символов). При `verified` сервер один раз увеличивает связанный навык в рамках 5 уровней, пересчитывает readiness по временной MVP-формуле и сохраняет неизменяемый `progressEvent`. Повторная проверка возвращает `409`.
+
 ```json
 { "evidence": "Ссылка на результат или краткое описание" }
 ```
@@ -41,3 +53,11 @@
 ## Связь с Telegram reminders
 
 После успешного `POST /api/v1/enrollments` интерфейс создаёт Telegram reminder через существующий `POST /api/enrollments` и передаёт `careerEnrollmentId`. Reminder record сохраняет эту связь, а Career Quest enrollment получает `reminderEnrollmentId`. Это временный integration bridge до переноса reminder service в основное хранилище.
+
+На `/telegram.html` размещены инструкция и форма выдачи ссылки. Ссылки не хранятся в браузере; повторное открытие страницы позволяет выпустить новый код для той же записи.
+
+- `GET /api/telegram/enrollments` — собственные напоминания сотрудника: `{ enrollments: [...] }`. Возвращает статус, `connected` и `linkExpiresAt`; без chat ID, токена и URL привязки.
+- `POST /api/enrollments` — создаёт напоминание для существующей серверной записи. Тело: `careerEnrollmentId`, `employeeId`, `activityId`, `occursAt` (будущая ISO-дата), `timezone`, `channel: "telegram"`. Ответ `201`: `{ id, telegramConnectUrl, linkExpiresAt }`.
+- `POST /api/telegram/enrollments/:id/link` — перевыпускает одноразовую ссылку на 24 часа, аннулируя прежнюю. `:id` — ID напоминания. Ответ `200` того же формата; новые записи не создаются.
+
+Эти операции доступны только сотруднику-владельцу. Чужая запись/служебная роль — `403`, отсутствующая запись — `404`, уже подключённое, отменённое или начавшееся мероприятие при перевыпуске — `409`, выключенный или ненастроенный Telegram при выдаче — `503`. Открытие сайта само по себе не выпускает код и не подписывает на уведомления.

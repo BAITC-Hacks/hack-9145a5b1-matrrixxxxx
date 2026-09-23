@@ -109,7 +109,9 @@ function getWebhookBot() {
     webhookBot = createTelegramReminderBot({
       storePath: STORE_PATH,
       token: process.env.TELEGRAM_BOT_TOKEN,
-      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'CareerQuestRemindBot'
+      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'CareerQuestRemindBot',
+      onConfirm: enrollmentId => careerStore.confirmEnrollment(enrollmentId),
+      onCancel: enrollmentId => careerStore.cancelEnrollment(enrollmentId)
     });
   }
   return webhookBot;
@@ -152,17 +154,10 @@ function sendCalendar(res, context) {
   res.writeHead(200, { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': `attachment; filename="career-quest-${context.enrollment.id}.ics"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   res.end(body);
 }
-function cancelReminderForCareerEnrollment(careerEnrollmentId) {
-  const store = getStore();
-  let changed = false;
-  for (const reminder of store.enrollments) {
-    if (reminder.careerEnrollmentId === careerEnrollmentId && reminder.status !== 'cancelled') {
-      reminder.status = 'cancelled';
-      reminder.cancelledAt = new Date().toISOString();
-      changed = true;
-    }
+function assertEmployeeOwner(actor, enrollment) {
+  if (actor?.role !== 'employee' || !actor.employeeId || actor.employeeId !== enrollment.employeeId) {
+    throw new CareerStoreError('FORBIDDEN', 'Действие доступно только сотруднику-владельцу записи');
   }
-  if (changed) saveStore(store);
 }
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -221,12 +216,31 @@ const server = http.createServer(async (req, res) => {
       try { return sendJson(res, 200, { enrollments: careerStore.listEnrollments(actor.employeeId) }); }
       catch (error) { return sendCareerError(res, error); }
     }
+    if (req.method === 'GET' && url.pathname === '/api/v1/reviews') {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        const history = url.searchParams.get('scope') === 'history';
+        return sendJson(res, 200, { reviews: careerStore.listReviewQueue(actor, { status: history ? 'history' : 'pending' }) });
+      } catch (error) { return sendCareerError(res, error); }
+    }
+    const sessionEnrollmentMatch = url.pathname.match(/^\/api\/v1\/sessions\/([^/]+)\/enrollments$/);
+    if (req.method === 'POST' && sessionEnrollmentMatch) {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        if (actor.role !== 'employee' || !actor.employeeId) return sendJson(res, 403, { error: 'Записываться на сессию может только сотрудник', code: 'FORBIDDEN' });
+        return sendJson(res, 201, { enrollment: careerStore.createEnrollment({ employeeId: actor.employeeId, sessionId: decodeURIComponent(sessionEnrollmentMatch[1]) }) });
+      }
+      catch (error) { return sendCareerError(res, error); }
+    }
     if (req.method === 'POST' && url.pathname === '/api/v1/enrollments') {
       const actor = requireCareerActor(req, res); if (!actor) return;
       try {
         const body = await readBody(req);
-        if (actor.role !== 'employee' || actor.employeeId !== body.employeeId) return sendJson(res, 403, { error: 'Записываться на активность может только сам сотрудник', code: 'FORBIDDEN' });
-        return sendJson(res, 201, { enrollment: careerStore.createEnrollment(body) });
+        if (actor.role !== 'employee' || !actor.employeeId) return sendJson(res, 403, { error: 'Записываться на сессию может только сотрудник', code: 'FORBIDDEN' });
+        if (typeof body.sessionId !== 'string' || !body.sessionId.trim()) {
+          return sendJson(res, 400, { error: 'Выберите sessionId. Дата и activityId выводятся сервером из сессии.', code: 'VALIDATION_ERROR' });
+        }
+        return sendJson(res, 201, { enrollment: careerStore.createEnrollment({ employeeId: actor.employeeId, sessionId: body.sessionId }) });
       }
       catch (error) { return sendCareerError(res, error); }
     }
@@ -236,19 +250,19 @@ const server = http.createServer(async (req, res) => {
       try {
         const enrollmentId = decodeURIComponent(cancelEnrollmentMatch[1]);
         const enrollment = careerStore.getEnrollment(enrollmentId);
-        if (actor.role !== 'employee' || actor.employeeId !== enrollment.employeeId) return sendJson(res, 403, { error: 'Отменить запись может только сам сотрудник', code: 'FORBIDDEN' });
+        assertEmployeeOwner(actor, enrollment);
         const result = careerStore.cancelEnrollment(enrollmentId);
-        cancelReminderForCareerEnrollment(enrollmentId);
+        telegramLinks.cancelForCareerEnrollment(enrollmentId);
         return sendJson(res, 200, result);
       } catch (error) { return sendCareerError(res, error); }
     }
-    const calendarMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/calendar$/);
+    const calendarMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/calendar(?:\.ics)?$/);
     if (req.method === 'GET' && calendarMatch) {
       const actor = requireCareerActor(req, res); if (!actor) return;
       try {
         const enrollmentId = decodeURIComponent(calendarMatch[1]);
         const enrollment = careerStore.getEnrollment(enrollmentId);
-        careerStore.assertCanAccessEmployee(actor, enrollment.employeeId);
+        assertEmployeeOwner(actor, enrollment);
         return sendCalendar(res, careerStore.getEnrollmentContext(enrollmentId));
       } catch (error) { return sendCareerError(res, error); }
     }
@@ -259,6 +273,15 @@ const server = http.createServer(async (req, res) => {
         const enrollmentId = decodeURIComponent(evidenceMatch[1]);
         careerStore.assertCanAccessEmployee(actor, careerStore.getEnrollment(enrollmentId).employeeId);
         return sendJson(res, 200, { enrollment: careerStore.submitEvidence(enrollmentId, await readBody(req)) });
+      }
+      catch (error) { return sendCareerError(res, error); }
+    }
+    const reviewMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/review$/);
+    if (req.method === 'POST' && reviewMatch) {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        const enrollmentId = decodeURIComponent(reviewMatch[1]);
+        return sendJson(res, 200, careerStore.reviewEnrollment(enrollmentId, actor, await readBody(req)));
       }
       catch (error) { return sendCareerError(res, error); }
     }

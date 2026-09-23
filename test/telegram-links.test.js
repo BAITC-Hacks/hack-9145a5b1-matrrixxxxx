@@ -19,11 +19,10 @@ async function withLinks(run, config = CONFIG) {
   const storePath = path.join(directory, 'reminder-store.json');
   const careerStore = createCareerStore(path.join(directory, 'career-store.json'));
   const actor = careerStore.getActor('U_EMPLOYEE_E0028');
-  const careerEnrollment = careerStore.createEnrollment({ employeeId: 'E0028', activityId: 'ACT_SYSTEM_DESIGN_LAB' });
-  const input = {
-    employeeId: actor.employeeId, activityId: careerEnrollment.activityId, careerEnrollmentId: careerEnrollment.id,
-    occursAt: '2026-10-01T09:00:00.000Z', timezone: 'Asia/Qyzylorda', channel: 'telegram'
-  };
+  const systemDesignSession = careerStore.getBootstrap(actor.employeeId).sessions
+    .find(item => item.activityId === 'ACT_SYSTEM_DESIGN_LAB' && item.availability === 'open');
+  const careerEnrollment = careerStore.createEnrollment({ employeeId: 'E0028', sessionId: systemDesignSession.id });
+  const input = { careerEnrollmentId: careerEnrollment.id, channel: 'telegram' };
   let currentTime = FIXED_NOW;
   const now = () => currentTime;
   const links = createTelegramLinks({ storePath, careerStore, config, now });
@@ -37,9 +36,14 @@ async function withLinks(run, config = CONFIG) {
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 }
 
-test('creation returns a 24-hour personal link and lists only safe fields', async () => {
+test('creation accepts only a Career Quest enrollment and ignores forged client schedule fields', async () => {
   await withLinks(({ links, actor, input, careerStore, storePath }) => {
-    const result = links.create(actor, { ...input, employeeName: 'spoofed', activityTitle: 'spoofed' });
+    const context = careerStore.getEnrollmentContext(input.careerEnrollmentId);
+    const result = links.create(actor, {
+      ...input,
+      employeeId: 'E0114', employeeName: 'spoofed', activityId: 'ACT_DATA_STORYTELLING_LAB',
+      activityTitle: 'spoofed', occursAt: '2040-01-01T00:00:00.000Z', timezone: 'UTC', durationMinutes: 1
+    });
     assert.match(result.telegramConnectUrl, /^https:\/\/t\.me\/CareerQuestRemindBot\?start=[A-Za-z0-9_-]{32}$/);
     assert.equal(Date.parse(result.linkExpiresAt) - FIXED_NOW, LINK_TOKEN_TTL_MS);
     assert.equal(careerStore.getEnrollment(input.careerEnrollmentId).reminderEnrollmentId, result.id);
@@ -48,8 +52,16 @@ test('creation returns a 24-hour personal link and lists only safe fields', asyn
       'id', 'careerEnrollmentId', 'activityTitle', 'occursAt', 'timezone', 'status', 'connected', 'linkExpiresAt'
     ].sort());
     assert.equal(enrollment.connected, false);
-    assert.notEqual(enrollment.activityTitle, 'spoofed');
-    assert.notEqual(JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0].employeeName, 'spoofed');
+    const stored = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0];
+    assert.equal(enrollment.activityTitle, context.activity.title);
+    assert.equal(stored.employeeId, actor.employeeId);
+    assert.equal(stored.employeeName, careerStore.getBootstrap(actor.employeeId).employee.name);
+    assert.equal(stored.activityId, context.activity.id);
+    assert.equal(stored.activityTitle, context.activity.title);
+    assert.equal(stored.sessionId, context.session.id);
+    assert.equal(stored.occursAt, new Date(context.session.startsAt).toISOString());
+    assert.equal(stored.timezone, context.session.timezone);
+    assert.equal(stored.durationMinutes, Math.round((new Date(context.session.endsAt) - new Date(context.session.startsAt)) / 60000));
     assert.throws(() => links.create(actor, input), { code: 'CONFLICT' });
   });
 });
@@ -124,13 +136,49 @@ test('renewal rejects cancelled or past events but supports reconnecting after d
   });
 });
 
-test('invalid dates, timezones and bodies never persist reminders', async () => {
+test('invalid bodies never persist reminders, while legacy surplus schedule fields are ignored', async () => {
   await withLinks(({ links, actor, input }) => {
-    for (const body of [null, [], { ...input, occursAt: 'not-a-date' },
-      { ...input, occursAt: new Date(FIXED_NOW).toISOString() }, { ...input, timezone: 'Mars/Base' }]) {
+    for (const body of [null, [], {}, { channel: 'telegram' }, { careerEnrollmentId: input.careerEnrollmentId },
+      { ...input, channel: 'email' }]) {
       assert.throws(() => links.create(actor, body), { code: 'VALIDATION_ERROR' });
     }
     assert.deepEqual(links.list(actor), []);
+  });
+});
+
+test('a waitlisted enrollment cannot create a Telegram link', async () => {
+  await withLinks(({ directory, careerStore, links, careerEnrollment }) => {
+    const careerStorePath = path.join(directory, 'career-store.json');
+    const fixture = JSON.parse(fs.readFileSync(careerStorePath, 'utf8'));
+    const session = fixture.sessions.find(item => item.id === careerEnrollment.sessionId);
+    session.capacity = 1;
+    const sourceEmployee = fixture.employees.find(item => item.id === 'E0028');
+    fixture.employees.push({ ...sourceEmployee, id: 'E9001', name: 'Тестовый сотрудник' });
+    fixture.users.push({ id: 'U_EMPLOYEE_E9001', role: 'employee', employeeId: 'E9001' });
+    fs.writeFileSync(careerStorePath, JSON.stringify(fixture, null, 2));
+
+    const waitlisted = careerStore.createEnrollment({
+      employeeId: 'E9001', sessionId: careerEnrollment.sessionId
+    });
+    const waitlistedActor = careerStore.getActor('U_EMPLOYEE_E9001');
+    assert.equal(waitlisted.status, 'waitlisted');
+    assert.throws(() => links.create(waitlistedActor, {
+      careerEnrollmentId: waitlisted.id, channel: 'telegram'
+    }), { code: 'CONFLICT' });
+    assert.deepEqual(links.list(waitlistedActor), []);
+  });
+});
+
+test('internal enrollment cancellation atomically disables its active reminder', async () => {
+  await withLinks(({ links, actor, input, storePath }) => {
+    const result = links.create(actor, input);
+    assert.equal(links.cancelForCareerEnrollment(input.careerEnrollmentId), true);
+    const [reminder] = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments;
+    assert.equal(reminder.id, result.id);
+    assert.equal(reminder.status, 'cancelled');
+    assert.equal(reminder.linkToken, null);
+    assert.equal(reminder.notificationsEnabled, false);
+    assert.equal(links.cancelForCareerEnrollment(input.careerEnrollmentId), false);
   });
 });
 
@@ -182,12 +230,11 @@ test('HTTP routes require authentication and return correct status codes without
       assert.equal((await request('/api/telegram/enrollments', { actor: 'U_HR_DEVELOPMENT' })).status, 403);
       assert.equal((await request('/api/enrollments', { method: 'POST', body: null })).status, 400);
       const enrolled = await request('/api/v1/enrollments', {
-        method: 'POST', body: { employeeId: 'E0028', activityId: 'ACT_SYSTEM_DESIGN_LAB' }
+        method: 'POST', body: { employeeId: 'E0028', sessionId: 'SES_SYSTEM_DESIGN_OCT' }
       });
       assert.equal(enrolled.status, 201);
       const created = await request('/api/enrollments', { method: 'POST', body: {
-        employeeId: 'E0028', activityId: 'ACT_SYSTEM_DESIGN_LAB', careerEnrollmentId: enrolled.body.enrollment.id,
-        occursAt: new Date(Date.now() + 10 * LINK_TOKEN_TTL_MS).toISOString(), timezone: 'Asia/Qyzylorda', channel: 'telegram'
+        careerEnrollmentId: enrolled.body.enrollment.id, channel: 'telegram'
       } });
       assert.equal(created.status, 201);
       const renewalPath = `/api/telegram/enrollments/${created.body.id}/link`;

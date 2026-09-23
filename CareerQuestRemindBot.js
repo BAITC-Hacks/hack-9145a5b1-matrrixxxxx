@@ -7,6 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createTelegramRequest, createTelegramReminderBot } = require('./lib/telegram-reminder-bot');
+const { createCareerStore } = require('./lib/career-store');
 
 const ROOT = __dirname;
 const POLL_TIMEOUT_SECONDS = 25;
@@ -32,10 +33,13 @@ function loadEnv(filename) {
 }
 
 const telegram = createTelegramRequest(token);
+const careerStore = createCareerStore(path.join(ROOT, 'data', 'career-store.json'));
 const bot = createTelegramReminderBot({
   storePath: path.join(ROOT, 'data', 'reminder-store.json'),
   botUsername: process.env.TELEGRAM_BOT_USERNAME || 'CareerQuestRemindBot',
-  telegram
+  telegram,
+  onConfirm: enrollmentId => careerStore.confirmEnrollment(enrollmentId),
+  onCancel: enrollmentId => careerStore.cancelEnrollment(enrollmentId)
 });
 
 let nextOffset = 0;

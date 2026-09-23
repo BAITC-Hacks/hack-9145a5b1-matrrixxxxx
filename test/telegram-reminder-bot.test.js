@@ -9,7 +9,7 @@ const { createTelegramReminderBot } = require('../lib/telegram-reminder-bot');
 
 const FIXED_NOW = Date.parse('2026-09-23T09:00:00.000Z');
 
-async function withBot(enrollments, run) {
+async function withBot(enrollments, run, handlers = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'career-quest-bot-'));
   const storePath = path.join(directory, 'reminder-store.json');
   const calls = [];
@@ -18,7 +18,9 @@ async function withBot(enrollments, run) {
     storePath,
     botUsername: 'CareerQuestRemindBot',
     now: () => FIXED_NOW,
-    telegram: async (method, payload) => { calls.push({ method, payload }); return true; }
+    telegram: async (method, payload) => { calls.push({ method, payload }); return true; },
+    onConfirm: handlers.onConfirm || (async () => undefined),
+    onCancel: handlers.onCancel || (async () => undefined)
   });
   try { return await run({ bot, calls, storePath }); }
   finally { fs.rmSync(directory, { recursive: true, force: true }); }
@@ -27,7 +29,7 @@ async function withBot(enrollments, run) {
 function futureEvent(overrides = {}) {
   return {
     id: 'event-1', activityTitle: 'System Design Lab', occursAt: '2026-09-24T09:30:00.000Z',
-    timezone: 'Asia/Qyzylorda', status: 'active', telegramChatId: null, linkToken: 'valid-link',
+    timezone: 'Asia/Qyzylorda', status: 'active', telegramChatId: null, linkToken: 'valid-link', careerEnrollmentId: 'EN_CAREER_EVENT_1',
     linkExpiresAt: '2026-09-24T09:00:00.000Z', sentReminders: [], ...overrides
   };
 }
@@ -64,6 +66,24 @@ test('confirmation and settings callbacks change only the caller records', async
     assert.equal(second.notificationsEnabled, undefined);
     assert.deepEqual(calls.filter(call => call.method === 'answerCallbackQuery').map(call => call.payload.callback_query_id), ['confirm-1', 'settings-1']);
   });
+});
+
+test('bot cancellation delegates to the canonical enrollment before cancelling reminders', async () => {
+  const cancelled = [];
+  await withBot([futureEvent({ telegramChatId: '77' })], async ({ bot, storePath }) => {
+    await bot.processUpdate({ callback_query: { id: 'cancel-1', data: 'cancel:event-1', message: { chat: { id: 77, type: 'private' } } } });
+    const event = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0];
+    assert.equal(event.status, 'cancelled');
+  }, { onCancel: async enrollmentId => { cancelled.push(enrollmentId); } });
+  assert.deepEqual(cancelled, ['EN_CAREER_EVENT_1']);
+});
+
+test('a rejected canonical cancellation leaves the reminder active', async () => {
+  await withBot([futureEvent({ telegramChatId: '77' })], async ({ bot, storePath }) => {
+    await bot.processUpdate({ callback_query: { id: 'cancel-1', data: 'cancel:event-1', message: { chat: { id: 77, type: 'private' } } } });
+    const event = JSON.parse(fs.readFileSync(storePath, 'utf8')).enrollments[0];
+    assert.equal(event.status, 'active');
+  }, { onCancel: async () => { throw new Error('Срок отмены участия уже прошёл'); } });
 });
 
 test('disconnect requires confirmation and removes the chat binding', async () => {

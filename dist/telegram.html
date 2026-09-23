@@ -13,18 +13,18 @@
   <a class="tg-skip" href="#main">Перейти к подключению</a>
   <header class="tg-header">
     <a class="tg-brand" href="/"><span aria-hidden="true">✓</span>career quest</a>
-    <a class="tg-back" href="/index.html#/app/settings/notifications">← К настройкам</a>
+    <a class="tg-back" href="/app/notifications">← К настройкам</a>
   </header>
   <main id="main" class="tg-page">
     <section class="tg-intro" aria-labelledby="page-title">
       <p class="tg-eyebrow">Ваше развитие — по расписанию</p>
       <h1 id="page-title">События в плане.<br><span>Напоминания в Telegram.</span></h1>
-      <p class="tg-lead">Получите персональную ссылку прямо здесь. Подключение займёт около минуты — и бот поможет не пропустить выбранное мероприятие.</p>
+      <p class="tg-lead">Выберите уже созданную запись на сессию. Подключение займёт около минуты — и бот поможет не пропустить мероприятие из вашего плана.</p>
     </section>
     <section class="tg-guide" aria-labelledby="guide-title">
       <div class="tg-section-head"><h2 id="guide-title">Как получить одноразовую ссылку</h2><span class="tg-badge">3 простых шага</span></div>
       <ol class="tg-steps">
-        <li><span class="tg-step-number" aria-hidden="true">01</span><h3>Выберите мероприятие</h3><p>Ниже выберите активность, укажите время из приглашения и нажмите «Получить одноразовую ссылку». Уже созданную запись используем повторно.</p></li>
+        <li><span class="tg-step-number" aria-hidden="true">01</span><h3>Получите ссылку на сайте</h3><p>Запишитесь на сессию в каталоге Career Quest. Затем выберите эту запись ниже и нажмите «Получить одноразовую ссылку».</p></li>
         <li><span class="tg-step-number" aria-hidden="true">02</span><h3>Откройте своего бота</h3><p>На этой странице появится кнопка «Открыть Telegram». Нажмите её, затем Start / «Запустить» в боте. Ссылку можно скопировать для другого устройства.</p></li>
         <li><span class="tg-step-number" aria-hidden="true">03</span><h3>Дождитесь подтверждения</h3><p>Бот ответит, что уведомления подключены. Вернитесь сюда и нажмите «Обновить статус» — у мероприятия появится отметка «Подключено».</p></li>
       </ol>
@@ -33,13 +33,13 @@
     <div class="tg-layout">
       <section class="tg-card" aria-labelledby="connect-title">
         <p class="tg-eyebrow">Начните здесь</p><h2 id="connect-title">Получить ссылку</h2>
-        <p class="tg-muted">Для каждого мероприятия нужна своя ссылка. Напоминания подключаются только после нажатия Start в боте.</p>
+        <p class="tg-muted">Для каждой записи нужна отдельная ссылка. Расписание и часовой пояс уже указаны организатором — просто выберите своё мероприятие.</p>
+        <p><a class="tg-button tg-quiet" href="/app/catalog">Выбрать сессию в каталоге →</a></p>
         <form id="telegram-form">
           <div class="tg-demo"><label for="telegram-profile">Профиль для локальной демонстрации</label><select id="telegram-profile" name="profile"><option value="E0028">Алия Нуржанова</option><option value="E0114">Данияр Сагинов</option><option value="E0192">Айгерим Касымова</option></select><small>Используются тестовые профили Career Quest.</small></div>
           <div id="telegram-service" class="tg-notice" role="status">Проверяем доступность подключения…</div>
           <fieldset id="telegram-fields" disabled>
-            <div class="tg-field"><label for="telegram-activity">Мероприятие</label><select id="telegram-activity" required><option value="">Выберите мероприятие</option></select></div>
-            <div class="tg-field"><label for="telegram-date">Дата и время из приглашения</label><input id="telegram-date" type="datetime-local" required aria-describedby="telegram-timezone"><small id="telegram-timezone"></small></div>
+            <div class="tg-field"><label for="telegram-session">Запись на сессию</label><select id="telegram-session" required><option value="">Выберите запись</option></select><small id="telegram-session-detail">Дата, место и часовой пояс появятся после выбора.</small></div>
             <label class="tg-consent"><input id="telegram-consent" type="checkbox" required><span>Хочу получать в Telegram напоминания об этом мероприятии.</span></label>
             <button class="tg-button tg-primary" type="submit">Получить одноразовую ссылку <span aria-hidden="true">↗</span></button>
           </fieldset>
