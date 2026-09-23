@@ -8,11 +8,14 @@ const https = require('node:https');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { CareerStoreError, createCareerStore } = require('./lib/career-store');
 
 loadEnv(path.join(__dirname, '.env'));
 const PORT = Number(process.env.PORT || 4173);
 const STORE_PATH = path.join(__dirname, 'data', 'reminder-store.json');
+const CAREER_STORE_PATH = path.join(__dirname, 'data', 'career-store.json');
 const STATIC_DIR = path.join(__dirname, 'dist');
+const careerStore = createCareerStore(CAREER_STORE_PATH);
 const REMINDER_OFFSETS = [
   { key: 'seven_days', milliseconds: 7 * 24 * 60 * 60 * 1000, label: 'через 7 дней' },
   { key: 'one_day', milliseconds: 24 * 60 * 60 * 1000, label: 'завтра' },
@@ -40,11 +43,16 @@ function sendJson(res, status, payload) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(JSON.stringify(payload));
 }
+function sendCareerError(res, error) {
+  if (!(error instanceof CareerStoreError)) throw error;
+  const statusByCode = { VALIDATION_ERROR: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409, STORE_CORRUPTED: 500 };
+  return sendJson(res, statusByCode[error.code] || 500, { error: error.message, code: error.code });
+}
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => { body += chunk; if (body.length > 100000) req.destroy(); });
-    req.on('end', () => { try { resolve(body ? JSON.parse(body) : {}); } catch { reject(new Error('Некорректный JSON')); } });
+    req.on('end', () => { try { resolve(body ? JSON.parse(body) : {}); } catch { reject(new CareerStoreError('VALIDATION_ERROR', 'Некорректный JSON')); } });
     req.on('error', reject);
   });
 }
@@ -98,6 +106,23 @@ function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
+    if (req.method === 'GET' && url.pathname === '/api/v1/bootstrap') {
+      return sendJson(res, 200, careerStore.getBootstrap(url.searchParams.get('employeeId') || 'E0028'));
+    }
+    if (req.method === 'GET' && url.pathname === '/api/v1/activities') {
+      const employeeId = url.searchParams.get('employeeId');
+      if (!employeeId) return sendJson(res, 400, { error: 'Укажите employeeId', code: 'VALIDATION_ERROR' });
+      return sendJson(res, 200, { activities: careerStore.listActivities(employeeId) });
+    }
+    if (req.method === 'POST' && url.pathname === '/api/v1/enrollments') {
+      try { return sendJson(res, 201, { enrollment: careerStore.createEnrollment(await readBody(req)) }); }
+      catch (error) { return sendCareerError(res, error); }
+    }
+    const evidenceMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/evidence$/);
+    if (req.method === 'POST' && evidenceMatch) {
+      try { return sendJson(res, 200, { enrollment: careerStore.submitEvidence(decodeURIComponent(evidenceMatch[1]), await readBody(req)) }); }
+      catch (error) { return sendCareerError(res, error); }
+    }
     if (req.method === 'POST' && url.pathname === '/api/enrollments') {
       const body = await readBody(req);
       const required = ['employeeId', 'employeeName', 'activityId', 'activityTitle', 'occursAt', 'timezone', 'channel'];
