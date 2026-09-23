@@ -1,0 +1,291 @@
+{
+  "fileKey": "T9wOCt9FekAskcs62vKeFm",
+  "url": "https://www.figma.com/design/T9wOCt9FekAskcs62vKeFm",
+  "runId": "career-quest-2026-09-23",
+  "phase": "foundations",
+  "entities": {
+    "pages": [
+      {
+        "name": "00 · Cover",
+        "id": "0:1"
+      },
+      {
+        "name": "01 · Getting started",
+        "id": "5:2"
+      },
+      {
+        "name": "02 · Foundations",
+        "id": "5:3"
+      },
+      {
+        "name": "03 · Button",
+        "id": "5:4"
+      },
+      {
+        "name": "04 · Card",
+        "id": "5:5"
+      },
+      {
+        "name": "05 · Navigation",
+        "id": "5:6"
+      },
+      {
+        "name": "06 · Desktop",
+        "id": "5:7"
+      },
+      {
+        "name": "07 · Mobile",
+        "id": "5:8"
+      },
+      {
+        "name": "08 · States",
+        "id": "5:9"
+      }
+    ],
+    "collections": [
+      {
+        "id": "VariableCollectionId:2:2",
+        "name": "CQ / Primitives",
+        "mode": "2:0"
+      },
+      {
+        "id": "VariableCollectionId:2:3",
+        "name": "CQ / Color",
+        "mode": "2:1"
+      },
+      {
+        "id": "VariableCollectionId:2:4",
+        "name": "CQ / Geometry",
+        "mode": "2:2"
+      }
+    ],
+    "primitives": [
+      {
+        "name": "navy",
+        "id": "VariableID:2:5"
+      },
+      {
+        "name": "navy-2",
+        "id": "VariableID:2:6"
+      },
+      {
+        "name": "lime",
+        "id": "VariableID:2:7"
+      },
+      {
+        "name": "ink",
+        "id": "VariableID:2:8"
+      },
+      {
+        "name": "muted",
+        "id": "VariableID:2:9"
+      },
+      {
+        "name": "line",
+        "id": "VariableID:2:10"
+      },
+      {
+        "name": "paper",
+        "id": "VariableID:2:11"
+      },
+      {
+        "name": "canvas",
+        "id": "VariableID:2:12"
+      },
+      {
+        "name": "blue",
+        "id": "VariableID:2:13"
+      }
+    ],
+    "colors": [
+      {
+        "name": "bg/navy",
+        "id": "VariableID:2:14"
+      },
+      {
+        "name": "bg/raised",
+        "id": "VariableID:2:15"
+      },
+      {
+        "name": "bg/brand",
+        "id": "VariableID:2:16"
+      },
+      {
+        "name": "text/primary",
+        "id": "VariableID:2:17"
+      },
+      {
+        "name": "text/secondary",
+        "id": "VariableID:2:18"
+      },
+      {
+        "name": "border/default",
+        "id": "VariableID:2:19"
+      },
+      {
+        "name": "bg/surface",
+        "id": "VariableID:2:20"
+      },
+      {
+        "name": "bg/canvas",
+        "id": "VariableID:2:21"
+      },
+      {
+        "name": "focus",
+        "id": "VariableID:2:22"
+      }
+    ],
+    "geometryAndInverse": [
+      {
+        "name": "space/8",
+        "id": "VariableID:3:2"
+      },
+      {
+        "name": "space/12",
+        "id": "VariableID:3:3"
+      },
+      {
+        "name": "space/16",
+        "id": "VariableID:3:4"
+      },
+      {
+        "name": "space/24",
+        "id": "VariableID:3:5"
+      },
+      {
+        "name": "space/32",
+        "id": "VariableID:3:6"
+      },
+      {
+        "name": "space/48",
+        "id": "VariableID:3:7"
+      },
+      {
+        "name": "radius/12",
+        "id": "VariableID:3:8"
+      },
+      {
+        "name": "radius/20",
+        "id": "VariableID:3:9"
+      },
+      {
+        "name": "text/inverse",
+        "id": "VariableID:3:10"
+      },
+      {
+        "name": "text/brand",
+        "id": "VariableID:3:11"
+      }
+    ],
+    "styles": {
+      "styles": [
+        {
+          "name": "Display",
+          "id": "S:95b45882030d9bb0be2f96077332c0b07470e794,"
+        },
+        {
+          "name": "Heading",
+          "id": "S:0088e9d8903733f941e1007a37870699e3014c16,"
+        },
+        {
+          "name": "Title",
+          "id": "S:84261cefd58a797fba61bd47940dfc5380eb6d56,"
+        },
+        {
+          "name": "Body",
+          "id": "S:3adc72f08d859c2baba1df22908bac74333932a0,"
+        },
+        {
+          "name": "Label",
+          "id": "S:9e1664d5d48bc2a9d44bbfe220d752f24cfd77ec,"
+        }
+      ],
+      "effect": {
+        "name": "CQ / Shadow / Card",
+        "id": "S:b72ddd988fcbf1a23ba860fc065c7ea0878581a2,"
+      },
+      "variables": 28,
+      "scopesValid": true,
+      "codeSyntaxValid": true,
+      "createdNodeIds": []
+    }
+  },
+  "createdNodeIds": [],
+  "completedSteps": [
+    "P0"
+  ],
+  "results": [
+    {
+      "description": "P2.b Branded cover",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"6:2\",\"6:3\",\"6:4\",\"6:5\",\"6:6\",\"6:7\"],\"coverId\":\"6:2\"}"
+        }
+      ]
+    },
+    {
+      "description": "P2.b Getting started and flow guidance",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"6:8\",\"6:9\",\"6:10\",\"6:11\",\"6:12\",\"6:13\"],\"guideId\":\"6:8\"}"
+        }
+      ]
+    },
+    {
+      "description": "docs sizing",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"mutatedNodeIds\":[\"6:3\",\"6:4\",\"6:5\",\"6:6\",\"6:7\"]}"
+        }
+      ]
+    },
+    {
+      "description": "docs sizing",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"mutatedNodeIds\":[\"6:9\",\"6:10\",\"6:11\",\"6:12\",\"6:13\"]}"
+        }
+      ]
+    },
+    {
+      "description": "foundations skeleton",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"root\":\"6:14\",\"colors\":\"6:17\",\"type\":\"6:18\",\"geometry\":\"6:19\",\"createdNodeIds\":[\"6:14\",\"6:15\",\"6:16\",\"6:17\",\"6:18\",\"6:19\"]}"
+        }
+      ]
+    },
+    {
+      "description": "P2.b Brand color swatches",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"7:2\",\"7:3\",\"7:4\",\"7:5\",\"7:6\",\"7:7\",\"7:8\",\"7:9\",\"7:10\"],\"mutatedNodeIds\":[\"6:17\"]}"
+        }
+      ]
+    },
+    {
+      "description": "P2.b Type specimens",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"7:11\",\"7:12\",\"7:13\",\"7:14\",\"7:15\"],\"mutatedNodeIds\":[\"6:18\"]}"
+        }
+      ]
+    },
+    {
+      "description": "P2.b Geometry and elevation documentation",
+      "result": [
+        {
+          "type": "text",
+          "text": "{\"createdNodeIds\":[\"7:16\",\"7:17\",\"7:18\",\"7:19\",\"7:20\",\"7:21\",\"7:22\",\"7:23\",\"7:24\"],\"mutatedNodeIds\":[\"6:19\"]}"
+        }
+      ]
+    }
+  ]
+}

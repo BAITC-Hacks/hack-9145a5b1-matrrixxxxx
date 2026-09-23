@@ -37,3 +37,7 @@
 ```
 
 Подтверждение менеджером и создание progress event будут добавлены после authentication/RBAC.
+
+## Связь с Telegram reminders
+
+После успешного `POST /api/v1/enrollments` интерфейс создаёт Telegram reminder через существующий `POST /api/enrollments` и передаёт `careerEnrollmentId`. Reminder record сохраняет эту связь, а Career Quest enrollment получает `reminderEnrollmentId`. Это временный integration bridge до переноса reminder service в основное хранилище.

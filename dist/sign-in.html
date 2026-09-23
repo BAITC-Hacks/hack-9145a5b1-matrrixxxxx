@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Вход · Career Quest</title>
+  <link rel="stylesheet" href="/app.css" />
+  <script src="/sign-in.js" defer></script>
+</head>
+<body>
+  <a class="cq-skip" href="#sign-in">Перейти к входу</a>
+  <main class="cq-auth" id="sign-in">
+    <section class="cq-auth-aside" aria-labelledby="auth-title">
+      <a class="cq-brand" href="/" aria-label="Career Quest — главная"><span class="cq-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m4 13 5 5L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Career Quest</span></a>
+      <div class="cq-auth-copy"><p class="cq-eyebrow" style="color:#bbf451">Ваш путь развития</p><h1 id="auth-title">Учиться с ясной целью.</h1><p>Здесь сохраняются рекомендации, выбранные активности и подтверждённый прогресс — только в рамках вашего корпоративного доступа.</p><div class="cq-auth-list"><div><b aria-hidden="true">✓</b><span>Никаких публичных рейтингов сотрудников</span></div><div><b aria-hidden="true">✓</b><span>Доступ к данным ограничен ролью</span></div><div><b aria-hidden="true">✓</b><span>Результат обучения подтверждает человек</span></div></div></div>
+      <p class="cq-auth-meta">Для production используется корпоративный SSO.</p>
+    </section>
+    <section class="cq-auth-main" aria-labelledby="signin-title"><div class="cq-auth-card">
+      <p class="cq-eyebrow">Добро пожаловать</p><h2 id="signin-title">Войдите в Career Quest</h2><p>Корпоративный вход будет подключён к SSO вашей организации.</p>
+      <button class="cq-sso-button" type="button" disabled aria-describedby="sso-note">Корпоративный SSO · подключается</button>
+      <p id="sso-note" class="cq-auth-bottom">В рабочем окружении эта кнопка перенаправит на корпоративный identity provider.</p>
+      <div class="cq-divider">или откройте безопасный demo-контур</div>
+      <div class="cq-demo-note">Demo-режим создан только для проверки интерфейса. Он не является настоящей авторизацией и явно помечен внутри приложения.</div>
+      <div class="cq-role-select" aria-label="Выбрать демонстрационную роль">
+        <button type="button" data-demo-role="employee"><span class="cq-role-icon" aria-hidden="true">↗</span><span><strong>Сотрудник · Алия Нуржанова</strong><span>Персональный план и развитие</span></span><b class="cq-role-arrow" aria-hidden="true">›</b></button>
+        <button type="button" data-demo-role="manager"><span class="cq-role-icon" aria-hidden="true">◎</span><span><strong>Руководитель · Backend team</strong><span>Команда и очередь review</span></span><b class="cq-role-arrow" aria-hidden="true">›</b></button>
+        <button type="button" data-demo-role="hr"><span class="cq-role-icon" aria-hidden="true">▦</span><span><strong>HR · Development</strong><span>Программа и каталог активностей</span></span><b class="cq-role-arrow" aria-hidden="true">›</b></button>
+        <button type="button" data-demo-role="admin"><span class="cq-role-icon" aria-hidden="true">⚙</span><span><strong>Администратор платформы</strong><span>Системные настройки и аудит</span></span><b class="cq-role-arrow" aria-hidden="true">›</b></button>
+      </div>
+      <p class="cq-auth-bottom">Нет доступа? <a href="mailto:hr@example.com?subject=Career%20Quest%20access">Запросить его у HR</a></p>
+    </div></section>
+  </main>
+</body>
+</html>

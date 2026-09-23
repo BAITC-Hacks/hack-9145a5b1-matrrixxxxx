@@ -35,6 +35,12 @@ test('evidence moves an enrollment to submitted once', () => withStore(store => 
   assert.throws(() => store.submitEvidence(enrollment.id, { evidence: 'Повторная отправка' }), error => error instanceof CareerStoreError && error.code === 'CONFLICT');
 }));
 
+test('a reminder record can be linked to the persisted enrollment', () => withStore(store => {
+  const enrollment = store.createEnrollment({ employeeId: 'E0028', activityId: 'ACT_SYSTEM_DESIGN_LAB' });
+  const linked = store.attachReminder(enrollment.id, 'REMINDER-123');
+  assert.equal(linked.reminderEnrollmentId, 'REMINDER-123');
+}));
+
 test('development roles can access only the profiles permitted to them', () => withStore(store => {
   const employee = store.getActor('U_EMPLOYEE_E0028');
   const manager = store.getActor('U_MANAGER_BACKEND');

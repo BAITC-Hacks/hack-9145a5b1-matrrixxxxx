@@ -20,7 +20,7 @@ https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://<YOUR_DO
 
 ## Планировщик
 
-Раз в час вызовите `POST https://<YOUR_DOMAIN>/api/reminders/run` с заголовком `x-cron-secret: <CRON_SECRET>`. Подойдут Vercel Cron, GitHub Actions, Cloud Scheduler или корпоративный scheduler. Сервис отправляет уведомления за 7 дней, 24 часа и 1 час, и хранит отправленные этапы, чтобы не было дублей.
+Вызывайте `POST https://<YOUR_DOMAIN>/api/reminders/run` с заголовком `x-cron-secret: <CRON_SECRET>` не реже одного раза в 5 минут. Подойдут Vercel Cron, GitHub Actions, Cloud Scheduler или корпоративный scheduler. Сервис отправляет уведомления за 7 дней, 24 часа и 1 час, хранит отправленные этапы, чтобы не было дублей, и при пропуске запуска выбирает только самое актуальное напоминание.
 
 Для локальной проверки:
 
