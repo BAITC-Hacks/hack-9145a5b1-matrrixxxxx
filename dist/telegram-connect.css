@@ -1,0 +1,75 @@
+:root { font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #182136; background: #f5f7fb; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; line-height: 1.55; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #6379d8; outline-offset: 3px; }
+[hidden] { display: none !important; }
+.tg-skip { position: fixed; top: -80px; left: 16px; z-index: 10; padding: 12px; background: white; }
+.tg-skip:focus { top: 12px; }
+.tg-header { max-width: 1184px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 32px; }
+.tg-brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: -.05em; }
+.tg-brand > span { background: #bbf451; width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; }
+.tg-back { font-size: 14px; font-weight: 600; color: #59667b; }
+.tg-back:hover { color: #182136; }
+.tg-page { max-width: 1184px; padding: 24px 32px 56px; margin: auto; }
+.tg-intro { max-width: 780px; margin: 20px 0 34px; }
+.tg-eyebrow { font-size: 11px; color: #63705f; text-transform: uppercase; letter-spacing: .13em; font-weight: 800; margin: 0 0 12px; }
+h1 { font-size: clamp(32px, 4.2vw, 50px); line-height: 1.1; letter-spacing: -.055em; margin: 0; }
+h1 span { color: #587622; }
+h2 { margin: 0; font-size: 21px; line-height: 1.25; letter-spacing: -.025em; }
+h3 { margin: 14px 0 7px; font-size: 16px; }
+.tg-lead { font-size: 16px; color: #667085; max-width: 620px; margin: 18px 0 0; }
+.tg-guide { background: #111c30; color: #f3f6fc; border-radius: 24px; padding: 28px; }
+.tg-section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.tg-badge { background: #253727; color: #d0ef9d; font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 20px; }
+.tg-steps { list-style: none; padding: 0; margin: 28px 0 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+.tg-step-number { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #435333; border-radius: 11px; color: #bbf451; font-size: 12px; font-weight: 700; }
+.tg-steps p { margin: 0; color: #b8c4d6; font-size: 13px; line-height: 1.7; }
+.tg-guide-note { font-size: 12px; margin: 0; padding-top: 18px; border-top: 1px solid #2a3445; color: #b8c4d6; }
+.tg-guide-note strong { color: #e4edfa; }
+.tg-layout { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 20px; margin-top: 24px; }
+.tg-card { min-width: 0; padding: 26px; border: 1px solid #e3e8ef; background: #fff; border-radius: 22px; box-shadow: 0 6px 24px #16253a05; }
+.tg-muted { color: #667085; font-size: 14px; margin: 12px 0 20px; }
+.tg-demo { background: #f5f7fb; border-radius: 12px; padding: 14px; margin: 20px 0; }
+.tg-demo label { font-size: 12px; color: #657187; }
+label { display: block; font-size: 13px; font-weight: 650; }
+select, input[type="datetime-local"], .tg-link-input { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #d7dee9; border-radius: 10px; background: #fff; color: #182136; margin-top: 7px; }
+small { display: block; color: #667085; font-size: 12px; margin-top: 7px; }
+fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+fieldset:disabled { opacity: .6; }
+.tg-field { margin-top: 18px; }
+.tg-consent { display: flex; align-items: flex-start; gap: 9px; margin: 20px 0; font-size: 13px; font-weight: 400; }
+.tg-consent input { accent-color: #466122; width: 17px; height: 17px; flex: 0 0 auto; margin-top: 2px; }
+.tg-button { border: 1px solid #dfe5ee; border-radius: 11px; padding: 11px 14px; background: white; font-size: 13px; font-weight: 700; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.tg-button:hover { background: #f2f5f8; }
+.tg-button:disabled { cursor: wait; opacity: .55; }
+.tg-primary { background: #bbf451; border-color: #bbf451; color: #1b3011; }
+.tg-primary:hover { background: #ade83e; }
+fieldset > .tg-primary { width: 100%; }
+.tg-quiet { padding: 8px 11px; font-size: 12px; }
+.tg-notice { padding: 12px 14px; font-size: 13px; background: #f0f4fd; color: #425779; border-radius: 12px; }
+.tg-error { font-size: 13px; color: #a12623; }
+.tg-result { margin-top: 22px; padding: 18px; border: 1px solid #d1e5bf; border-radius: 14px; background: #f6fbed; }
+.tg-result h3 { margin-top: 0; }
+.tg-result p { font-size: 13px; }
+.tg-result:focus { outline-offset: 5px; }
+.tg-link-input { font-size: 12px; background: #fff; }
+.tg-result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tg-connection { padding: 20px 0; border-bottom: 1px solid #e9edf3; }
+.tg-connection h3 { margin: 0 0 8px; }
+.tg-connection p { font-size: 12px; color: #667085; margin: 8px 0; }
+.tg-state { display: inline-flex; border-radius: 20px; padding: 4px 9px; font-size: 11px; font-weight: 700; color: #795615; background: #fff3dd; }
+.tg-state-connected { color: #176745; background: #e5f5ed; }
+.tg-faq { padding: 16px 0; border-bottom: 1px solid #e9edf3; font-size: 13px; }
+.tg-faq summary { cursor: pointer; font-weight: 650; }
+.tg-faq p { color: #667085; margin-bottom: 0; }
+.tg-schedule { display: flex; align-items: center; gap: 12px; margin-top: 24px; padding: 15px; background: #f5f7fb; border-radius: 13px; }
+.tg-schedule > span { font-size: 24px; color: #667085; }
+.tg-schedule p { font-size: 12px; color: #667085; margin: 0; }
+.tg-schedule strong { color: #283a51; }
+.tg-footer { padding: 0 24px 28px; color: #7a8495; text-align: center; font-size: 12px; }
+@media(max-width: 760px) { .tg-layout, .tg-steps { grid-template-columns: 1fr; } .tg-steps { gap: 22px; } .tg-header { padding: 20px; } .tg-page { padding: 10px 20px 32px; } .tg-guide, .tg-card { padding: 22px; } .tg-intro { margin-top: 12px; } }
+@media(max-width: 400px) { .tg-brand { font-size: 17px; } .tg-back { font-size: 12px; } .tg-header, .tg-page { padding-left: 16px; padding-right: 16px; } .tg-guide, .tg-card { padding: 18px; } }

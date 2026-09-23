@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#10182b">
+  <title>Подключить Telegram · Career Quest</title>
+  <link rel="stylesheet" href="/telegram-connect.css">
+  <script src="/telegram-connect.js" defer></script>
+</head>
+<body>
+  <a class="tg-skip" href="#main">Перейти к подключению</a>
+  <header class="tg-header">
+    <a class="tg-brand" href="/"><span aria-hidden="true">✓</span>career quest</a>
+    <a class="tg-back" href="/index.html#/app/settings/notifications">← К настройкам</a>
+  </header>
+  <main id="main" class="tg-page">
+    <section class="tg-intro" aria-labelledby="page-title">
+      <p class="tg-eyebrow">Ваше развитие — по расписанию</p>
+      <h1 id="page-title">События в плане.<br><span>Напоминания в Telegram.</span></h1>
+      <p class="tg-lead">Получите персональную ссылку прямо здесь. Подключение займёт около минуты — и бот поможет не пропустить выбранное мероприятие.</p>
+    </section>
+    <section class="tg-guide" aria-labelledby="guide-title">
+      <div class="tg-section-head"><h2 id="guide-title">Как получить одноразовую ссылку</h2><span class="tg-badge">3 простых шага</span></div>
+      <ol class="tg-steps">
+        <li><span class="tg-step-number" aria-hidden="true">01</span><h3>Выберите мероприятие</h3><p>Ниже выберите активность, укажите время из приглашения и нажмите «Получить одноразовую ссылку». Уже созданную запись используем повторно.</p></li>
+        <li><span class="tg-step-number" aria-hidden="true">02</span><h3>Откройте своего бота</h3><p>На этой странице появится кнопка «Открыть Telegram». Нажмите её, затем Start / «Запустить» в боте. Ссылку можно скопировать для другого устройства.</p></li>
+        <li><span class="tg-step-number" aria-hidden="true">03</span><h3>Дождитесь подтверждения</h3><p>Бот ответит, что уведомления подключены. Вернитесь сюда и нажмите «Обновить статус» — у мероприятия появится отметка «Подключено».</p></li>
+      </ol>
+      <p class="tg-guide-note">Ссылка действует <strong>24 часа</strong> и используется <strong>один раз</strong>. Не пересылайте её другим людям: она связывает вашу запись с Telegram-чатом.</p>
+    </section>
+    <div class="tg-layout">
+      <section class="tg-card" aria-labelledby="connect-title">
+        <p class="tg-eyebrow">Начните здесь</p><h2 id="connect-title">Получить ссылку</h2>
+        <p class="tg-muted">Для каждого мероприятия нужна своя ссылка. Напоминания подключаются только после нажатия Start в боте.</p>
+        <form id="telegram-form">
+          <div class="tg-demo"><label for="telegram-profile">Профиль для локальной демонстрации</label><select id="telegram-profile" name="profile"><option value="E0028">Алия Нуржанова</option><option value="E0114">Данияр Сагинов</option><option value="E0192">Айгерим Касымова</option></select><small>Используются тестовые профили Career Quest.</small></div>
+          <div id="telegram-service" class="tg-notice" role="status">Проверяем доступность подключения…</div>
+          <fieldset id="telegram-fields" disabled>
+            <div class="tg-field"><label for="telegram-activity">Мероприятие</label><select id="telegram-activity" required><option value="">Выберите мероприятие</option></select></div>
+            <div class="tg-field"><label for="telegram-date">Дата и время из приглашения</label><input id="telegram-date" type="datetime-local" required aria-describedby="telegram-timezone"><small id="telegram-timezone"></small></div>
+            <label class="tg-consent"><input id="telegram-consent" type="checkbox" required><span>Хочу получать в Telegram напоминания об этом мероприятии.</span></label>
+            <button class="tg-button tg-primary" type="submit">Получить одноразовую ссылку <span aria-hidden="true">↗</span></button>
+          </fieldset>
+          <p id="telegram-error" class="tg-error" role="alert" hidden></p>
+        </form>
+        <div id="telegram-result" class="tg-result" aria-live="polite" hidden></div>
+      </section>
+      <section class="tg-card" aria-labelledby="connections-title">
+        <div class="tg-section-head"><h2 id="connections-title">Мои подключения</h2><button id="telegram-refresh" class="tg-button tg-quiet" type="button">Обновить статус</button></div>
+        <div id="telegram-connections" aria-live="polite"><p class="tg-muted">Загружаем мероприятия…</p></div>
+        <details class="tg-faq"><summary>Ссылка истекла или потерялась?</summary><p>Нажмите «Получить новую ссылку» у нужного мероприятия. Она снова будет действовать 24 часа. Прежняя ссылка перестанет работать; новая запись на мероприятие не создаётся.</p></details>
+        <details class="tg-faq"><summary>Не пришло подтверждение в боте?</summary><p>Убедитесь, что открыли именно персональную ссылку и нажали Start / «Запустить». Если бот был заблокирован, разблокируйте его. Для уже подключённых записей используйте команду /events.</p></details>
+        <details class="tg-faq"><summary>Как отключить напоминания?</summary><p>В боте откройте /settings, чтобы поставить напоминания на паузу. Команда /disconnect с подтверждением полностью отключает Telegram. Повторное подключение доступно через новую ссылку.</p></details>
+        <div class="tg-schedule"><span aria-hidden="true">◷</span><p><strong>За 7 дней, 24 часа и 1 час</strong><br>Напоминаем о предстоящем событии после подключения.</p></div>
+      </section>
+    </div>
+  </main>
+  <footer class="tg-footer">Career Quest · Учиться с ясной целью</footer>
+</body>
+</html>

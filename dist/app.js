@@ -1,253 +1,55 @@
 (() => {
   'use strict';
-
-  const SESSION_KEY = 'careerQuestDemoSession';
-  const actors = Object.freeze({
-    employee: { actorId: 'U_EMPLOYEE_E0028', role: 'employee', employeeId: 'E0028', name: 'Алия Нуржанова', initials: 'АН', home: '/app/home', label: 'Сотрудник' },
-    manager: { actorId: 'U_MANAGER_BACKEND', role: 'manager', name: 'Backend team', initials: 'BT', home: '/manager/team', label: 'Руководитель' },
-    hr: { actorId: 'U_HR_DEVELOPMENT', role: 'hr', name: 'HR Development', initials: 'HR', home: '/hr/overview', label: 'HR' },
-    admin: { actorId: 'U_ADMIN_PLATFORM', role: 'admin', name: 'Администратор', initials: 'АД', home: '/admin/overview', label: 'Администратор' }
-  });
-  const fallback = Object.freeze({
-    employee: { id: 'E0028', name: 'Алия Нуржанова', role: 'Backend Engineer', grade: 'Middle', targetGrade: 'Senior', tenureMonths: 52, readiness: 68, requirements: '5 из 7 требований уже закрыты', recommendedActivityId: 'ACT_SYSTEM_DESIGN_LAB', skills: [{ skillId: 'SK_SYSTEM_DESIGN', name: 'System Design', level: 2, targetLevel: 4 }, { skillId: 'SK_PYTHON', name: 'Python', level: 3, targetLevel: 4 }, { skillId: 'SK_PUBLIC_SPEAKING', name: 'Public Speaking', level: 2, targetLevel: 2 }] },
-    activities: [{ id: 'ACT_SYSTEM_DESIGN_LAB', status: 'published', title: 'System Design: от схемы к решению', description: 'Практикум по проектированию устойчивых сервисов.', skillId: 'SK_SYSTEM_DESIGN', skillName: 'System Design', skillImpact: 1, format: 'Практикум', durationHours: 6, eligibility: { roles: ['Backend Engineer'], grades: ['Middle', 'Senior'] } }, { id: 'ACT_DATA_STORYTELLING_LAB', status: 'published', title: 'Data Storytelling Lab', description: 'Практика построения убедительной истории на основе данных.', skillId: 'SK_DATA_STORYTELLING', skillName: 'Data Storytelling', skillImpact: 1, format: 'Практика', durationHours: 4, eligibility: { roles: ['Data Analyst'], grades: ['Junior', 'Middle'] } }, { id: 'ACT_LEADERSHIP_PRACTICE', status: 'published', title: 'Leadership через практику', description: 'Кросс-функциональный проект с регулярной обратной связью.', skillId: 'SK_LEADERSHIP', skillName: 'Leadership', skillImpact: 1, format: 'Проект', durationHours: 8, eligibility: { roles: ['Product Manager'], grades: ['Middle', 'Senior'] } }]
-  });
-  const roleNavigation = Object.freeze({
-    employee: [
-      ['Мой план', '/app/home', '⌂'], ['Каталог', '/app/catalog', '▦'], ['Мои записи', '/app/enrollments', '◷'], ['Маршрут', '/app/development-plan', '↗'], ['Уведомления', '/app/notifications', '◌'], ['Профиль', '/app/profile', '◉']
-    ],
-    manager: [['Моя команда', '/manager/team', '◎'], ['Очередь review', '/manager/reviews', '✓']],
-    hr: [['Обзор', '/hr/overview', '▤'], ['Активности', '/hr/activities', '▦'], ['Аналитика', '/hr/analytics', '◫']],
-    admin: [['Состояние системы', '/admin/overview', '⚙']]
-  });
-  const routeMeta = Object.freeze({
-    '/app/home': { role: 'employee', kind: 'employee-home', title: 'Мой план развития', eyebrow: 'Персональный маршрут', description: 'Сфокусируйтесь на одном следующем действии — мы покажем контекст, а не просто список задач.' },
-    '/app/catalog': { role: 'employee', kind: 'employee-catalog', title: 'Каталог активностей', eyebrow: 'Подходящие возможности', description: 'Здесь появятся сессии, время, места и доступность. Сейчас показан foundation-каталог.' },
-    '/app/enrollments': { role: 'employee', kind: 'employee-enrollments', title: 'Мои записи', eyebrow: 'Learning hub', description: 'Ближайшие активности, статусы прохождения и evidence будут собраны в одном месте.' },
-    '/app/development-plan': { role: 'employee', kind: 'employee-plan', title: 'Мой карьерный маршрут', eyebrow: 'Навыки и цель', description: 'Развитие строится вокруг требований следующего грейда и проверяемых результатов.' },
-    '/app/notifications': { role: 'employee', kind: 'employee-notifications', title: 'Уведомления', eyebrow: 'Ваши настройки', description: 'Вы управляете подключением Telegram и будущими каналами напоминаний.' },
-    '/app/profile': { role: 'employee', kind: 'employee-profile', title: 'Мой профиль', eyebrow: 'Корпоративные данные', description: 'Отображаем только те данные, которые нужны для карьерного маршрута.' },
-    '/manager/team': { role: 'manager', kind: 'manager-team', title: 'Моя команда', eyebrow: 'Руководитель', description: 'Поддерживайте развитие прямых подчинённых без публичного ранжирования.' },
-    '/manager/reviews': { role: 'manager', kind: 'manager-reviews', title: 'Очередь review', eyebrow: 'Проверка evidence', description: 'Здесь появятся результаты, ожидающие содержательной обратной связи.' },
-    '/hr/overview': { role: 'hr', kind: 'hr-overview', title: 'Программа развития', eyebrow: 'HR overview', description: 'Смотрите охват и дефициты компетенций, сохраняя фокус на программе, а не на рейтингах людей.' },
-    '/hr/activities': { role: 'hr', kind: 'hr-activities', title: 'Каталог HR', eyebrow: 'Управление активностями', description: 'Черновики, публикация и архив — в одном управляемом потоке.' },
-    '/hr/analytics': { role: 'hr', kind: 'hr-analytics', title: 'Аналитика развития', eyebrow: 'Агрегированные данные', description: 'Перед включением детальных срезов будут добавлены пороги приватности и безопасный экспорт.' },
-    '/admin/overview': { role: 'admin', kind: 'admin-overview', title: 'Состояние системы', eyebrow: 'Администрирование', description: 'Интеграции, роли и журнал важных действий станут управляемыми из этого пространства.' }
-  });
-
-  const root = document.getElementById('career-quest-app');
-  const currentPath = normalizePath(window.location.pathname);
-  const session = getSession();
-  if (!session) {
-    window.location.replace(`/sign-in?next=${encodeURIComponent(currentPath)}`);
-    return;
-  }
-  const route = routeMeta[currentPath];
-  if (!route) {
-    renderGuard({ title: 'Страница не найдена', message: 'Такого раздела пока нет или ссылка устарела.', action: session.home, actionLabel: 'Вернуться в рабочее пространство', code: '404' });
-    return;
-  }
-  if (route.role !== session.role) {
-    renderGuard({ title: 'Недостаточно прав', message: 'Этот раздел доступен другой корпоративной роли. Доступ в demo-контуре не заменяет настоящую авторизацию.', action: session.home, actionLabel: 'Вернуться к моему пространству', code: '403' });
-    return;
-  }
-  renderShell();
-
-  function normalizePath(pathname) {
-    const value = String(pathname || '/').replace(/\/+$/, '');
-    return value || '/';
-  }
-  function getSession() {
-    try {
-      const value = JSON.parse(window.localStorage.getItem(SESSION_KEY) || 'null');
-      if (!value || !actors[value.role] || actors[value.role].actorId !== value.actorId) return null;
-      return { ...actors[value.role], ...value };
-    } catch { return null; }
-  }
-  function create(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined && text !== null) node.textContent = String(text);
-    return node;
-  }
-  function link(label, href, className = 'cq-button cq-button--quiet') {
-    const node = create('a', className, label); node.href = href; return node;
-  }
-  function status(label, type = 'neutral') { return create('span', `cq-status cq-status--${type}`, label); }
-  function card(className = 'cq-card cq-card--pad') { return create('article', className); }
-  function icon(value) { return create('span', 'cq-nav-icon', value); }
-  function initials(value) { return String(value || '').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'CQ'; }
-  function append(parent, ...nodes) { nodes.filter(Boolean).forEach(node => parent.append(node)); return parent; }
-  function pageHeader(meta, actions = []) {
-    const head = create('header', 'cq-page-head'); const copy = create('div');
-    append(copy, create('p', 'cq-eyebrow', meta.eyebrow), create('h1', '', meta.title), create('p', '', meta.description));
-    const actionWrap = create('div', 'cq-page-actions'); actions.forEach(action => actionWrap.append(action));
-    append(head, copy, actionWrap); return head;
-  }
-  function showSourceNotice(error) {
-    const alert = create('div', 'cq-alert'); const copy = create('div');
-    append(copy, create('strong', '', 'Показаны demo-данные'), create('p', '', 'Локальный API недоступен или development access выключен. Интерфейс остаётся доступным для проверки layout и сценариев.'));
-    append(alert, create('span', '', 'i'), copy);
-    if (error) alert.title = error.message || String(error);
-    return alert;
-  }
-  function emptyState(title, message, href, label) {
-    const view = create('section', 'cq-empty'); append(view, create('div', 'cq-empty-icon', '○'), create('h2', '', title), create('p', '', message));
-    if (href && label) view.append(link(label, href, 'cq-button cq-button--dark')); return view;
-  }
-  function errorState(error) {
-    const view = create('section', 'cq-error'); append(view, create('div', 'cq-empty-icon', '!'), create('h2', '', 'Не удалось загрузить раздел'), create('p', '', error.message || 'Попробуйте обновить страницу.'));
-    const retry = create('button', 'cq-button cq-button--dark', 'Повторить'); retry.type = 'button'; retry.addEventListener('click', renderPage); view.append(retry); return view;
-  }
-  async function api(path) {
-    const response = await fetch(path, { headers: { 'x-career-quest-actor': session.actorId } });
-    let payload = null; try { payload = await response.json(); } catch { /* response is handled below */ }
-    if (!response.ok) throw new Error(payload?.error || `Сервис ответил кодом ${response.status}`);
-    return payload;
-  }
-  async function bootstrap(employeeId = session.employeeId || 'E0028') {
-    try { return { ...(await api(`/api/v1/bootstrap?employeeId=${encodeURIComponent(employeeId)}`)), source: 'api' }; }
-    catch (error) { return { employee: fallback.employee, activities: fallback.activities, enrollments: [], progressEvents: [], source: 'fallback', error }; }
-  }
-  function renderGuard({ title, message, action, actionLabel, code }) {
-    document.body.className = '';
-    const section = create('main', 'cq-guard cq-card'); section.id = 'main-content';
-    append(section, status('Ошибка ' + code, 'danger'), create('h1', '', title), create('p', '', message), link(actionLabel, action, 'cq-button cq-button--dark'));
-    root.replaceChildren(section);
-  }
-  function renderShell() {
-    const shell = create('div', 'cq-app');
-    const sidebar = create('aside', 'cq-sidebar');
-    const brand = link('', '/app/home', 'cq-brand'); brand.setAttribute('aria-label', 'Career Quest — рабочее пространство');
-    const mark = create('span', 'cq-brand-mark'); mark.setAttribute('aria-hidden', 'true'); mark.textContent = '✓'; append(brand, mark, create('span', '', 'Career Quest'));
-    const nav = create('nav', 'cq-nav'); nav.setAttribute('aria-label', 'Разделы рабочего пространства');
-    roleNavigation[session.role].forEach(([label, href, glyph]) => {
-      const item = create('a', '', label); item.href = href; if (href === currentPath) item.setAttribute('aria-current', 'page'); item.prepend(icon(glyph)); nav.append(item);
-    });
-    const environment = create('div', 'cq-environment', 'Demo-контур · mock access');
-    const userWrap = create('div', 'cq-sidebar-bottom'); const user = create('button', 'cq-user-button'); user.type = 'button'; user.setAttribute('aria-label', 'Выйти из demo-контура');
-    append(user, create('span', 'cq-avatar', session.initials || initials(session.name)), create('span', '', ''), create('span', '', '↗'));
-    const userCopy = user.querySelectorAll('span')[1]; append(userCopy, create('strong', '', session.name), create('span', '', session.label));
-    user.addEventListener('click', () => { window.localStorage.removeItem(SESSION_KEY); window.location.assign('/sign-in'); }); userWrap.append(user);
-    append(sidebar, brand, environment, create('p', 'cq-nav-label', session.label), nav, userWrap);
-
-    const main = create('div', 'cq-app-main'); const top = create('header', 'cq-topbar');
-    const mobileBrand = create('span', 'cq-mobile-brand'); const mobileMark = create('span', 'cq-brand-mark', '✓'); mobileMark.setAttribute('aria-hidden', 'true'); append(mobileBrand, mobileMark, create('span', '', 'Career Quest'));
-    const crumb = create('span', 'cq-topbar-crumb', route.eyebrow);
-    const actions = create('div', 'cq-topbar-actions'); const legacy = link('Открыть MVP', '/legacy-demo', 'cq-button cq-button--quiet'); legacy.title = 'Предыдущий единый demo-dashboard'; actions.append(legacy);
-    append(top, mobileBrand, crumb, actions); const content = create('main', 'cq-page'); content.id = 'main-content'; append(main, top, content); append(shell, sidebar, main); root.replaceChildren(shell);
-    renderPage();
-  }
-  async function renderPage() {
-    const content = document.getElementById('main-content'); if (!content) return;
-    const meta = routeMeta[normalizePath(window.location.pathname)]; if (!meta) return;
-    content.replaceChildren(pageHeader(meta), create('div', 'cq-skeleton'), create('div', 'cq-skeleton'));
-    try {
-      const view = await renderByKind(meta.kind);
-      content.replaceChildren(pageHeader(meta, headerActions(meta.kind)), view);
-    } catch (error) { content.replaceChildren(pageHeader(meta), errorState(error)); }
-  }
-  function headerActions(kind) {
-    if (kind === 'employee-catalog') return [link('Мои записи', '/app/enrollments', 'cq-button cq-button--dark')];
-    if (kind === 'employee-home') return [link('Каталог активностей', '/app/catalog', 'cq-button cq-button--dark')];
-    if (kind === 'hr-activities') return [link('Создать activity', '/hr/activities', 'cq-button cq-button--dark')];
-    return [];
-  }
-  async function renderByKind(kind) {
-    switch (kind) {
-      case 'employee-home': return renderEmployeeHome();
-      case 'employee-catalog': return renderCatalog();
-      case 'employee-enrollments': return renderEnrollments();
-      case 'employee-plan': return renderDevelopmentPlan();
-      case 'employee-notifications': return renderNotifications();
-      case 'employee-profile': return renderProfile();
-      case 'manager-team': return renderManagerTeam();
-      case 'manager-reviews': return renderReviews();
-      case 'hr-overview': return renderHrOverview();
-      case 'hr-activities': return renderHrActivities();
-      case 'hr-analytics': return renderHrAnalytics();
-      case 'admin-overview': return renderAdminOverview();
-      default: return emptyState('Раздел готовится', 'Функциональность будет добавлена в следующей задаче.', session.home, 'Вернуться');
-    }
-  }
-  function activityCard(activity) {
-    const item = card('cq-card cq-activity'); const top = create('div', 'cq-activity-top');
-    append(top, status(activity.status === 'published' ? 'Доступно' : activity.status === 'draft' ? 'Черновик' : 'Архив', activity.status === 'published' ? 'success' : 'neutral'), create('span', 'cq-list-meta', `${activity.durationHours} ч`));
-    append(item, top, create('h3', '', activity.title), create('p', '', activity.description || 'Описание будет добавлено организатором.'));
-    const footer = create('div', 'cq-activity-footer'); append(footer, create('span', '', `${activity.skillName || activity.skillId} +${activity.skillImpact || 1}`), create('span', '', activity.format || 'Активность')); item.append(footer); return item;
-  }
-  function skillRows(skills) {
-    const list = create('div'); (skills || []).forEach(skill => {
-      const row = create('div', 'cq-skill-row'); const target = Math.max(1, Number(skill.targetLevel) || 1); const level = Math.max(0, Number(skill.level) || 0);
-      const progress = create('div', 'cq-progress'); const bar = create('i'); bar.style.width = `${Math.min(100, level / target * 100)}%`; progress.append(bar);
-      append(row, create('strong', '', skill.name || skill.skillId), create('span', '', `${level} / ${target}`), progress); list.append(row);
-    }); return list;
-  }
-  async function renderEmployeeHome() {
-    const data = await bootstrap(); const employee = data.employee; const recommended = (data.activities || []).find(item => item.id === employee.recommendedActivityId) || data.activities?.[0];
-    const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const grid = create('div', 'cq-grid cq-grid--two'); const action = card('cq-next-action');
-    append(action, create('p', 'cq-eyebrow', 'Ваш следующий сильный шаг'), create('h2', '', recommended?.title || 'Выберите следующую активность'), create('p', '', recommended ? `Навык ${recommended.skillName || recommended.skillId} — ключевой разрыв для цели ${employee.targetGrade}. В Task 2 здесь появится выбор конкретной сессии.` : 'Когда HR опубликует подходящую активность, она появится в этой карточке.'));
-    const facts = create('div', 'cq-action-facts'); if (recommended) append(facts, create('span', '', `${recommended.format} · ${recommended.durationHours} ч`), create('span', '', `${recommended.skillName || recommended.skillId} +${recommended.skillImpact || 1}`)); action.append(facts);
-    const footer = create('div', 'cq-action-footer'); append(footer, status('Рекомендация объяснима', 'success'), link('Открыть каталог', '/app/catalog', 'cq-button')); action.append(footer);
-    const score = card('cq-card cq-card--pad cq-score-card'); const ring = create('div', 'cq-score-ring'); ring.style.setProperty('--score', String(employee.readiness || 0)); append(ring, create('strong', '', `${employee.readiness || 0}%`), create('span', '', 'готовность'));
-    const scoreCopy = create('div'); append(scoreCopy, create('h3', '', `Цель: ${employee.targetGrade}`), create('p', '', employee.requirements || 'Профиль собирается')); append(score, ring, scoreCopy); append(grid, action, score); view.append(grid);
-    const lower = create('div', 'cq-grid cq-grid--two'); const skills = card(); append(skills, create('div', 'cq-card-head'), skillRows(employee.skills)); const skillHead = skills.querySelector('.cq-card-head'); append(skillHead, create('div', '', ''), status('Ключевые навыки', 'neutral')); skillHead.firstChild.append(create('h2', '', 'Куда направить усилия'), create('p', '', 'Уровень и требования следующего грейда.'));
-    const next = card(); const nextHead = create('div', 'cq-card-head'); append(nextHead, create('div', '', ''), status('Следующее действие', 'warning')); nextHead.firstChild.append(create('h2', '', 'Ваш learning hub'), create('p', '', 'Записи и evidence собраны по понятным статусам.')); next.append(nextHead);
-    const list = create('div', 'cq-list'); const item = create('div', 'cq-list-item'); append(item, create('span', 'cq-list-icon', '◷'), create('div', 'cq-list-copy', ''), create('span', 'cq-list-meta', 'Task 2')); const copy = item.querySelector('.cq-list-copy'); append(copy, create('strong', '', data.enrollments?.length ? 'Есть активные записи' : 'Пока нет записей'), create('span', '', data.enrollments?.length ? 'Откройте My learning для статусов.' : 'Выберите сессию в каталоге, когда она будет опубликована.')); list.append(item); next.append(list); lower.append(skills, next); view.append(lower); return view;
-  }
-  async function renderCatalog() {
-    const data = await bootstrap(); const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const note = create('div', 'cq-alert'); append(note, create('span', '', 'i'), create('div', '', '')); const copy = note.lastChild; append(copy, create('strong', '', 'Foundation-каталог'), create('p', '', 'В следующей задаче каждая activity получит опубликованные сессии, дату, часовой пояс, место и вместимость. Сотрудник не будет выбирать дату вручную.')); view.append(note);
-    const collection = create('section', 'cq-collection'); (data.activities || []).filter(activity => activity.status === 'published').forEach(activity => collection.append(activityCard(activity))); view.append(collection); return view;
-  }
-  async function renderEnrollments() {
-    const data = await bootstrap(); const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    if (!data.enrollments?.length) { view.append(emptyState('В вашем learning hub пока пусто', 'Когда вы выберете опубликованную сессию, здесь появятся её статус, напоминания, календарь и evidence.', '/app/catalog', 'Открыть каталог')); return view; }
-    const listCard = card(); const list = create('div', 'cq-list'); data.enrollments.forEach(enrollment => { const item = create('div', 'cq-list-item'); const activity = data.activities.find(value => value.id === enrollment.activityId); append(item, create('span', 'cq-list-icon', '◷'), create('div', 'cq-list-copy', ''), status(enrollment.status || 'enrolled', 'success')); const copy = item.querySelector('.cq-list-copy'); append(copy, create('strong', '', activity?.title || enrollment.activityId), create('span', '', 'Дата сессии и статусы attendance будут добавлены в Task 2.')); list.append(item); }); listCard.append(list); view.append(listCard); return view;
-  }
-  async function renderDevelopmentPlan() {
-    const data = await bootstrap(); const view = create('div', 'cq-grid cq-grid--two'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const plan = card(); const head = create('div', 'cq-card-head'); append(head, create('div', '', ''), status(`Цель: ${data.employee.targetGrade}`, 'success')); head.firstChild.append(create('h2', '', 'Карта ключевых навыков'), create('p', '', 'Показаны самые значимые требования следующего карьерного шага.')); append(plan, head, skillRows(data.employee.skills));
-    const rules = card(); append(rules, create('div', 'cq-card-head'), create('div', 'cq-list')); const ruleHead = rules.querySelector('.cq-card-head'); ruleHead.append(create('div', '', '')); ruleHead.firstChild.append(create('h2', '', 'Как работает рекомендация'), create('p', '', 'Без автоматического кадрового решения.'));
-    const list = rules.querySelector('.cq-list'); ['Сопоставляет текущий уровень и требования цели.', 'Учитывает формат активности и её ожидаемый эффект.', 'Объясняет следующий шаг и показывает альтернативы.', 'Обновляет прогресс только после evidence и review.'].forEach((value, index) => { const row = create('div', 'cq-list-item'); append(row, create('span', 'cq-list-icon', String(index + 1)), create('div', 'cq-list-copy', value)); list.append(row); }); view.append(plan, rules); return view;
-  }
-  function renderNotifications() {
-    const view = create('div', 'cq-grid cq-grid--two'); const telegram = card(); const head = create('div', 'cq-card-head'); append(head, create('div', '', ''), status('Подключается после записи', 'warning')); head.firstChild.append(create('h2', '', 'Telegram'), create('p', '', 'Привязка создаётся одноразовой ссылкой и может быть отключена пользователем.')); const list = create('div', 'cq-list'); const row = create('div', 'cq-list-item'); append(row, create('span', 'cq-list-icon', '◌'), create('div', 'cq-list-copy', ''), create('span', 'cq-list-meta', '7 д · 24 ч · 1 ч')); const copy = row.querySelector('.cq-list-copy'); append(copy, create('strong', '', 'Напоминания о выбранной сессии'), create('span', '', 'Delivery history, повторное подключение и частота появятся в Task 2.')); list.append(row); append(telegram, head, list);
-    const privacy = card(); append(privacy, create('div', 'cq-card-head'), create('p', '', '')); const pHead = privacy.querySelector('.cq-card-head'); pHead.append(create('div', '', '')); pHead.firstChild.append(create('h2', '', 'Ваш контроль'), create('p', '', 'Уведомления — opt-in, а не обязательный канал.')); privacy.append(create('div', 'cq-alert', 'Telegram chat ID не показывается в интерфейсе HR и не должен попадать в логи.'));
-    append(view, telegram, privacy); return view;
-  }
-  async function renderProfile() {
-    const data = await bootstrap(); const employee = data.employee; const view = create('div', 'cq-grid cq-grid--two'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const profile = card(); const head = create('div', 'cq-card-head'); const avatar = create('span', 'cq-avatar', initials(employee.name)); append(head, create('div', '', ''), avatar); head.firstChild.append(create('h2', '', employee.name), create('p', '', `${employee.role} · ${employee.grade}`)); const list = create('div', 'cq-list'); [['Цель развития', employee.targetGrade], ['Стаж в компании', `${Math.max(1, Math.round((employee.tenureMonths || 0) / 12))} года`], ['Данные профиля', 'Корпоративный источник']].forEach(([name, value]) => { const row = create('div', 'cq-list-item'); append(row, create('span', 'cq-list-icon', '•'), create('div', 'cq-list-copy', name), create('span', 'cq-list-meta', value)); list.append(row); }); append(profile, head, list);
-    const note = card(); append(note, create('h2', '', 'О данных профиля'), create('p', '', 'В production профиль синхронизируется из корпоративного источника по принципу минимально необходимых данных. Изменения карьерной цели и consent будут иметь отдельную историю.')); view.append(profile, note); return view;
-  }
-  async function renderManagerTeam() {
-    const data = await bootstrap('E0028'); const employee = data.employee; const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const metrics = create('div', 'cq-grid cq-grid--three'); [['Прямые подчинённые', '1', 'Без публичного ранжирования'], ['Ожидают review', '0', 'Task 3 добавит очередь'], ['Следующий touchpoint', '—', 'Появится с activity session']].forEach(([label, value, note]) => { const item = card('cq-card cq-metric'); append(item, create('small', '', label), create('strong', '', value), create('span', '', note)); metrics.append(item); }); view.append(metrics);
-    const member = card(); const head = create('div', 'cq-card-head'); append(head, create('div', '', ''), status(`Готовность ${employee.readiness}%`, 'success')); head.firstChild.append(create('h2', '', employee.name), create('p', '', `${employee.role} · цель ${employee.targetGrade}`)); member.append(head, skillRows(employee.skills)); view.append(member); return view;
-  }
-  function renderReviews() { return emptyState('Пока нет evidence на проверке', 'В Task 3 здесь появятся только evidence прямых подчинённых, статусы и действия «Подтвердить» / «Вернуть на доработку».', '/manager/team', 'Открыть команду'); }
-  async function hrActivities() {
-    try { return { activities: (await api('/api/v1/hr/activities')).activities || [], source: 'api' }; }
-    catch (error) { return { activities: fallback.activities, source: 'fallback', error }; }
-  }
-  async function renderHrOverview() {
-    const data = await hrActivities(); const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const published = data.activities.filter(item => item.status === 'published').length; const drafts = data.activities.filter(item => item.status === 'draft').length;
-    const metrics = create('div', 'cq-grid cq-grid--three'); [[`Опубликованные активности`, published, 'Доступны в подходящих каталогах'], ['Черновики', drafts, 'Требуют проверки HR'], ['Сессии и места', '—', 'Добавляются в Task 2']].forEach(([label, value, note]) => { const item = card('cq-card cq-metric'); append(item, create('small', '', label), create('strong', '', value), create('span', '', note)); metrics.append(item); }); view.append(metrics);
-    const next = card(); append(next, create('div', 'cq-card-head')); const head = next.querySelector('.cq-card-head'); head.append(create('div', '', ''), status('Следующий этап', 'warning')); head.firstChild.append(create('h2', '', 'Сначала создаём модели сессий'), create('p', '', 'После этого HR сможет управлять датой, местом, вместимостью, участниками и отменой конкретного потока.')); next.append(link('Открыть каталог HR', '/hr/activities', 'cq-button cq-button--dark')); view.append(next); return view;
-  }
-  async function renderHrActivities() {
-    const data = await hrActivities(); const view = create('div', 'cq-grid'); if (data.source === 'fallback') view.append(showSourceNotice(data.error));
-    const note = create('div', 'cq-alert'); append(note, create('span', '', 'i'), create('div', '', '')); const copy = note.lastChild; append(copy, create('strong', '', 'Каталог защищён ролью HR'), create('p', '', 'Сейчас можно просмотреть real development API data. Конструктор сессий и публикация с валидаторами будут реализованы следующим HR-блоком.')); view.append(note);
-    const collection = create('section', 'cq-collection'); data.activities.forEach(activity => collection.append(activityCard(activity))); view.append(collection); return view;
-  }
-  function renderHrAnalytics() {
-    const view = create('div', 'cq-grid cq-grid--three'); [['Skill gaps', 'System Design', 'Агрегированный приоритет программы'], ['Охват', '—', 'Появится после session/enrollment'], ['Completion', '—', 'Только подтверждённые результаты']].forEach(([label, value, note]) => { const item = card('cq-card cq-metric'); append(item, create('small', '', label), create('strong', '', value), create('span', '', note)); view.append(item); }); const alert = create('div', 'cq-alert'); append(alert, create('span', '', 'i'), create('div', '', '')); const copy = alert.lastChild; append(copy, create('strong', '', 'Приватность по умолчанию'), create('p', '', 'Будущая аналитика использует агрегаты и минимальный размер когорты; персональные рейтинги не входят в продукт.')); view.append(alert); return view;
-  }
-  async function renderAdminOverview() {
-    let health = null; try { health = await fetch('/api/health').then(response => response.ok ? response.json() : null); } catch { /* offline state shown below */ }
-    const view = create('div', 'cq-grid cq-grid--three'); [['Identity', 'SSO required', 'Dev header нельзя использовать в production'], ['Telegram', health?.telegramConfigured ? 'Configured' : 'Не настроен', 'Polling и webhook взаимоисключаемы'], ['Хранилище', 'Demo JSON', 'Postgres/outbox обязателен до production']].forEach(([label, value, note]) => { const item = card('cq-card cq-metric'); append(item, create('small', '', label), create('strong', '', value), create('span', '', note)); view.append(item); }); const governance = card(); append(governance, create('div', 'cq-card-head'), create('div', 'cq-list')); const head = governance.querySelector('.cq-card-head'); head.append(create('div', '', ''), status('Task 5', 'warning')); head.firstChild.append(create('h2', '', 'Governance workspace'), create('p', '', 'Следующий admin-блок добавит роли, taxonomy, integrations и immutable audit log.')); const list = governance.querySelector('.cq-list'); ['Роль назначается сервером после SSO.', 'Каждое privileged действие создаёт audit event.', 'Секреты и chat IDs не отображаются в UI.'].forEach(value => { const row = create('div', 'cq-list-item'); append(row, create('span', 'cq-list-icon', '✓'), create('div', 'cq-list-copy', value)); list.append(row); }); view.append(governance); return view;
-  }
-})();
+  const STORE='career-quest-design-v3', SESSION='career-quest-demo-session';
+  let storageIssue=false;
+  function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{storageIssue=true;return fallback;}}
+  let db=read(STORE,null); if(!db||db.version!==3||!Array.isArray(db.employees))db=CQSeed();
+  let session=read(SESSION,{role:'employee'}), view={filter:'Все',query:'',format:'Все форматы',skill:'Все навыки',tab:'all'}, chat=[];
+  const app=document.getElementById('app'), dialog=document.getElementById('dialog');
+  let lastFocus=null, toastTimer, activeRoute='', menuOpen=false;
+  const roleNames={employee:'Сотрудник',manager:'Руководитель',hr:'HR-партнёр',admin:'Администратор'};
+  const starts={employee:'/app/home',manager:'/manager/team',hr:'/hr/overview',admin:'/admin/overview'};
+  const paths={home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',route:'<circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v7a4 4 0 0 0 4 4h6M10 5h7a3 3 0 0 1 0 6h-5"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2m4 0h2M8 18h2"/>',sparkles:'<path d="m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4zM20 2v4m-2-2h4"/>',bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',chevron:'<path d="m9 5 7 7-7 7"/>',down:'<path d="m6 9 6 6 6-6"/>',check:'<path d="m5 12 4 4L19 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',book:'<path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1v15"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3a4 4 0 0 1 0 8"/>',user:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/>',settings:'<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 8.5a2.5 2.5 0 1 1 4 2c-1 .5-1.5 1-1.5 2.5M12 17h.01"/>',logout:'<path d="M9 3H4v18h5M9 12h12m-4-4 4 4-4 4"/>',menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M3 16v5h18v-5"/>',upload:'<path d="M12 16V4m-5 5 5-5 5 5M3 16v5h18v-5"/>',plus:'<path d="M12 5v14M5 12h14"/>',chart:'<path d="M4 3v17h17M8 15v-4m5 4V6m5 9V9"/>',shield:'<path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6zM8 12l3 3 5-6"/>',layers:'<path d="m12 3 10 6-10 6L2 9zM2 14l10 6 10-6"/>',code:'<path d="m8 7-5 5 5 5m8-10 5 5-5 5m-5-12-2 14"/>',pin:'<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/>',mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m3 5 9 7 9-7"/>',send:'<path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/>',edit:'<path d="m15 4 5 5M3 21l5-1L21 7a2 2 0 0 0-5-5L3 15z"/>',file:'<path d="M14 2H5v20h14V7zM14 2v5h5M8 12h8M8 16h6"/>',external:'<path d="M14 3h7v7m0-7L10 14M10 3H3v18h18v-7"/>',refresh:'<path d="M20 7v5h-5M4 17v-5h5M5 7a8 8 0 0 1 13-2l2 3M4 16l2 3a8 8 0 0 0 13-2"/>'};
+  function icon(name){return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name]||paths.layers}</svg>`;}
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  const person=()=>db.employees.find(e=>e.id===db.profile)||db.employees[0];
+  const initials=name=>String(name).split(/\s+/).filter(Boolean).slice(0,2).map(n=>n[0]).join('');
+  const activity=id=>db.activities.find(a=>a.id===id);
+  const myEnrollments=(id=person().id)=>db.enrollments.filter(e=>e.employeeId===id);
+  const eligible=(a,p=person())=>!a.roles.length||a.roles.includes(p.role);
+  const catalog=()=>db.activities.filter(a=>a.status==='published'&&eligible(a));
+  function recommended(p=person()){return db.activities.find(a=>a.id===p.recommended&&a.status==='published')||db.activities.find(a=>a.status==='published'&&eligible(a,p));}
+  function save(){try{localStorage.setItem(STORE,JSON.stringify(db));localStorage.setItem(SESSION,JSON.stringify(session));return true;}catch{storageIssue=true;toast('Не удалось сохранить на устройстве. Изменения доступны до закрытия страницы.');return false;}}
+  function audit(action,object){db.audit.unshift({id:crypto.randomUUID(),date:new Date().toISOString(),actor:roleNames[session?.role]||'Гость',action,object});}
+  function notify(title,text,route,employeeId=person().id){db.notifications.unshift({id:crypto.randomUUID(),title,text,route,employeeId,read:false,date:new Date().toISOString()});}
+  function date(value,short=false){return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:short?'short':'long',timeZone:db.preferences.timezone}).format(new Date(value));}
+  function time(value){return new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:db.preferences.timezone}).format(new Date(value));}
+  function dateTile(value){const d=new Date(value);return `<div class="date-tile"><strong>${new Intl.DateTimeFormat('ru',{day:'numeric',timeZone:db.preferences.timezone}).format(d)}</strong><span>${new Intl.DateTimeFormat('ru',{month:'short',timeZone:db.preferences.timezone}).format(d).replace('.','')}</span></div>`;}
+  function toast(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),4200);}
+  const btn=(label,action,style='',ico='',extra='')=>`<button class="button ${style}" data-action="${action}" ${extra}>${ico?icon(ico):''}${label}</button>`;
+  const link=(label,path,style='',ico='')=>`<a class="button ${style}" href="#${path}">${ico?icon(ico):''}${label}</a>`;
+  const textLink=(label,path)=>`<a class="text-link" href="#${path}">${label}${icon('arrow')}</a>`;
+  const tag=(text,color='',ico='')=>`<span class="tag ${color}">${ico?icon(ico):''}${esc(text)}</span>`;
+  const banner=(text,type='')=>`<div class="info-banner ${type}">${icon(type==='success'?'check':'info')}<p>${text}</p></div>`;
+  const statusNames={enrolled:'Вы записаны',waitlisted:'Лист ожидания',submitted:'На проверке',revision:'Нужны изменения',verified:'Подтверждено',cancelled:'Отменено',published:'Опубликовано',draft:'Черновик',archived:'В архиве'};
+  const statusColor={enrolled:'blue',waitlisted:'orange',submitted:'violet',revision:'orange',verified:'green',cancelled:'',published:'green',draft:'orange',archived:''};
+  const status=s=>tag(statusNames[s]||s,statusColor[s],s==='verified'?'check':'');
+  function empty(title,text,action='',ico='grid',compact=false){return `<div class="empty ${compact?'compact':''}"><div class="tile-icon">${icon(ico)}</div><h2>${title}</h2><p>${text}</p>${action}</div>`;}
+  function heading(title,subtitle='',actions='',eyebrow=''){return `<header class="page-heading"><div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1 tabindex="-1">${title}</h1>${subtitle?`<p>${subtitle}</p>`:''}</div>${actions?`<div class="page-tools">${actions}</div>`:''}</header>`;}
+  function stat(value,label,ico,color=''){return `<div class="card stat"><div class="stat-icon ${color}">${icon(ico)}</div><div><strong>${value}</strong><p>${label}</p></div></div>`;}
+  function go(path){if(location.hash==='#'+path)render();else location.hash=path;}
+  const navigation={employee:[['home','Мой план','/app/home'],['route','Карта навыков','/app/development-plan'],['grid','Каталог активностей','/app/catalog'],['calendar','Мои активности','/app/enrollments'],['sparkles','AI-навигатор','/app/navigator']],manager:[['users','Моя команда','/manager/team'],['check','Проверка результатов','/manager/reviews']],hr:[['chart','Обзор программы','/hr/overview'],['grid','Активности','/hr/activities'],['users','Сотрудники','/hr/people'],['layers','Аналитика навыков','/hr/analytics']],admin:[['grid','Обзор системы','/admin/overview'],['users','Пользователи и роли','/admin/users'],['layers','Справочник навыков','/admin/skills'],['target','Матрицы ролей','/admin/role-matrices'],['code','Интеграции','/admin/integrations'],['file','Журнал действий','/admin/audit-log']]};
+  function titleFor(path){return [...Object.values(navigation).flat(),['','Уведомления','/app/notifications'],['','Профиль','/app/profile'],['','Настройки','/app/settings'],['','Помощь','/help']].filter(x=>path.startsWith(x[2])).sort((a,b)=>b[2].length-a[2].length)[0]?.[1]||'Career Quest';}
+  function shell(content,path){const role=session?.role||'employee',p=person(),nav=navigation[role]||navigation.employee,unread=db.notifications.filter(n=>!n.read&&n.employeeId===p.id).length;const name=role==='employee'?p.name:role==='manager'?'Тимур Асанов':role==='hr'?'Айнур Садыкова':'Администратор';const navItems=nav.map(([ico,label,url])=>`<a class="nav-item ${path===url||path.startsWith(url+'/')?'active':''}" href="#${url}" ${path===url?'aria-current="page"':''}>${icon(ico)}${label}${url==='/manager/reviews'?`<span class="count">${db.enrollments.filter(e=>e.employeeId==='E0028'&&e.status==='submitted').length}</span>`:''}</a>`).join('');return `<div class="app-shell"><div class="scrim ${menuOpen?'open':''}" data-action="close-menu"></div><aside class="sidebar ${menuOpen?'open':''}" aria-label="Основная навигация"><a class="brand" href="#${starts[role]}"><span class="brand-symbol">${icon('check')}</span>career quest<span class="sr-only"> · главная</span></a><div class="workspace-label"><span>A</span>Alem Team${icon('down')}</div><div class="nav-caption">${role==='employee'?'Моё развитие':roleNames[role]}</div><nav class="nav-list">${navItems}</nav><div class="nav-bottom"><nav class="nav-list"><a class="nav-item ${path.startsWith('/app/settings')?'active':''}" href="#/app/settings">${icon('settings')}Настройки</a><a class="nav-item ${path==='/help'?'active':''}" href="#/help">${icon('help')}Помощь и поддержка</a></nav><div class="sidebar-footer"><a href="#/app/profile" class="avatar" aria-label="Открыть профиль">${initials(name)}</a><div class="user-copy"><strong>${esc(name.split(' ').slice(0,2).join(' '))}</strong><span>${roleNames[role]}</span></div><button class="icon-button" data-action="switch-role" aria-label="Сменить демо-роль">${icon('logout')}</button></div></div></aside><header class="topbar"><button class="icon-button mobile-toggle" data-action="menu" aria-label="Открыть меню" aria-expanded="${menuOpen}">${icon('menu')}</button><div class="breadcrumb"><a href="#${starts[role]}">Рабочее пространство</a>${icon('chevron')}<strong>${esc(titleFor(path))}</strong></div><div class="top-actions"><button class="demo-label" style="border:0;cursor:pointer" data-action="switch-role" title="Демоверсия · сменить роль">ДЕМО</button><button class="icon-button" data-action="search" aria-label="Поиск по продукту">${icon('search')}</button><a class="icon-button" href="#/app/notifications" aria-label="Уведомления${unread?', непрочитанных '+unread:''}">${icon('bell')}${unread?'<i class="notification-dot"></i>':''}</a><a class="avatar" href="#/app/profile" aria-label="Профиль">${initials(name)}</a></div></header><main id="main" class="main route-enter" tabindex="-1">${storageIssue?banner('Хранилище браузера недоступно. Изменения сохранятся только до закрытия этой страницы.','warning'):''}${content}<footer class="demo-footer"><span>Демоверсия · синтетические данные · изменения на этом устройстве</span><span><a href="#/privacy">Конфиденциальность</a> &nbsp;·&nbsp; <a href="#/accessibility">Доступность</a></span></footer></main><nav class="mobile-nav" aria-label="Мобильная навигация">${nav.slice(0,4).map(([ico,label,url])=>`<a class="${path===url?'active':''}" href="#${url}">${icon(ico)}<span>${label.replace('Каталог активностей','Каталог').replace('Карта навыков','Навыки').replace('Проверка результатов','Проверка').replace('Обзор программы','Обзор').replace('Мои активности','Активности').replace('Пользователи и роли','Пользователи')}</span></a>`).join('')}</nav></div>`;}
+  function ring(p){return `<div class="ring" style="--value:${p.readiness}" role="img" aria-label="Готовность к ${esc(p.target)}: ${p.readiness}%"><div class="ring-inner"><span class="ring-value">${p.readiness}<small>%</small></span><span>готовность к грейду</span></div></div>`;}
+  function skillBars(p){return p.skills.map(s=>`<div class="skill-item"><div class="skill-caption"><strong>${esc(s.name)}</strong><span>${s.level} / ${s.target} для ${esc(p.target)}</span></div><div class="progress ${s.level>=s.target?'green':''}"><span style="width:${Math.min(100,s.level/s.target*100)}%"></span></div></div>`).join('');}
+  function home(){const p=person(),a=recommended(),ens=myEnrollments(),upcoming=ens.filter(e=>e.status==='enrolled'),verified=ens.filter(e=>e.status==='verified');return heading('Мой план развития',`Здравствуйте, ${esc(p.name.split(' ')[0])}. Сделаем следующий шаг к вашей цели.`,btn('Скачать план','export-plan','','download'),'ВАШЕ РАЗВИТИЕ, ВАШ ТЕМП')+`<div class="dashboard-top"><section class="card recommendation"><div class="rec-top">${tag('Рекомендуемый шаг','green','sparkles')}<span class="rec-score">${a?.score||94}% совпадение</span></div>${a?`<h2>${esc(a.title)}</h2><p>${esc(a.skill)} — ключевой навык для ${esc(p.target)}. Практика и обратная связь помогут увереннее применять его в работе.</p><div class="inline-meta"><span>${icon('book')}${esc(a.format)}</span><span>${icon('clock')}${a.hours} часов</span><span>${icon('calendar')}${date(a.date)}</span></div><div class="rec-footer">${link('Посмотреть активность','/app/activities/'+a.id,'primary','arrow')}${btn('Почему этот шаг?','explain','quiet')}</div>`:empty('Выберите следующий шаг','Изучите каталог доступных активностей.',link('В каталог','/app/catalog'))}</section><section class="card readiness"><div><div class="eyebrow">Карьерная цель</div><h2>${esc(p.role)}</h2><div class="grade-path">${esc(p.grade)}${icon('arrow')}<strong>${esc(p.target)}</strong></div></div>${ring(p)}<div class="readiness-foot"><span>${p.skills.filter(s=>s.level>=s.target).length} из ${p.skills.length} навыков на целевом уровне</span><a href="#/app/development-plan" aria-label="Посмотреть карту навыков">${icon('arrow')}</a></div></section></div><div class="grid three dashboard-stats">${stat(upcoming.length,'Предстоящих активностей','calendar','blue')}${stat(verified.length,'Подтверждённых результатов','check','lime')}${stat(ens.filter(e=>e.status==='submitted').length,'Результатов на проверке','clock','violet')}</div><div class="dashboard-bottom"><section class="card card-pad"><div class="section-head"><h2>Навыки для следующего грейда</h2>${textLink('Все навыки','/app/development-plan')}</div>${skillBars(p)}<p class="skill-note">Текущий уровень / целевой уровень. Прогресс обновляется после проверки.</p></section><section class="card card-pad"><div class="section-head"><h2>Ближайшие шаги</h2>${textLink('Мои активности','/app/enrollments')}</div>${upcoming.length?upcoming.slice(0,2).map(e=>activityRow(activity(e.activityId),'/app/enrollments/'+e.id,status(e.status))).join(''):catalog().slice(0,2).map(a=>activityRow(a,'/app/activities/'+a.id)).join('')}<a class="activity-row" href="#/app/development-plan"><div class="tile-icon violet">${icon('target')}</div><div class="activity-row-copy"><h3>Обсудите маршрут с руководителем</h3><p>Цели, практика и ожидания от следующего грейда</p></div>${icon('chevron')}</a></section></div><div class="callout">${icon('sparkles')}<p><strong>Не уверены, с чего начать?</strong> Навигатор объяснит рекомендацию и предложит альтернативы.</p>${textLink('Спросить навигатора','/app/navigator')}</div>`;}
+  function activityRow(a,url,badge=''){if(!a)return '';return `<a class="activity-row" href="#${url}">${dateTile(a.date)}<div class="activity-row-copy"><h3>${esc(a.title)}</h3><p>${date(a.date)} · ${time(a.date)} · ${esc(a.format)}</p></div>${badge||icon('chevron')}</a>`;}
+  function activityCard(a){return `<article class="card activity-card"><div class="activity-card-top"><div class="tile-icon ${a.color}">${icon(a.format==='Менторство'?'users':a.format==='Курс'?'book':a.format==='Проект'?'layers':'code')}</div>${a.id===person().recommended?tag('Для вашей цели','green','sparkles'):tag(a.skill)}</div><h2><a href="#/app/activities/${a.id}">${esc(a.title)}</a></h2><p class="description">${esc(a.description.split('. ')[0])}.</p><div class="inline-meta"><span>${icon('book')}${esc(a.format)}</span><span>${icon('clock')}${a.hours} ч</span><span>${icon('calendar')}${date(a.date,true)}</span></div><div class="activity-card-bottom"><span class="muted">${places(a)>0?places(a)+' мест доступно':'Лист ожидания'}</span>${textLink('Подробнее','/app/activities/'+a.id)}</div></article>`;}
+  function places(a){return Math.max(0,a.capacity-a.booked-db.enrollments.filter(e=>e.activityId===a.id&&['enrolled','submitted','verified','revision'].includes(e.status)&&e.id!=='EN_DEMO_REVIEW').length);}
+  function catalogPage(){const items=catalog().filter(a=>(!view.query||(a.title+' '+a.skill+' '+a.description).toLowerCase().includes(view.query.toLowerCase()))&&(view.format==='Все форматы'||a.format===view.format)&&(view.skill==='Все навыки'||a.skill===view.skill));return heading('Найдите свой следующий шаг','Активности, которые подходят вашей роли и помогают расти.',link('Мои активности','/app/enrollments','','calendar'))+`<div class="filters"><label class="search-field">${icon('search')}<span class="sr-only">Поиск активностей</span><input class="input" id="catalog-search" placeholder="Поиск по названию или навыку" value="${esc(view.query)}"></label><select aria-label="Формат активности" data-filter="format">${['Все форматы',...new Set(catalog().map(a=>a.format))].map(f=>`<option ${view.format===f?'selected':''}>${f}</option>`).join('')}</select><select aria-label="Навык" data-filter="skill">${['Все навыки',...new Set(catalog().map(a=>a.skill))].map(s=>`<option ${view.skill===s?'selected':''}>${s}</option>`).join('')}</select>${btn('Сбросить','reset-filters','quiet','refresh')}</div><div id="catalog-results"><div class="result-meta"><span>Доступно активностей: ${items.length}</span><span>Подобраны для ${esc(person().role)}</span></div>${items.length?`<div class="grid three">${items.map(activityCard).join('')}</div>`:`<div class="card">${empty('Ничего не найдено','Попробуйте другое название или сбросьте фильтры.',btn('Сбросить фильтры','reset-filters','primary'),'search')}</div>`}</div>`;}
+  function detail(id){const a=activity(id);if(!a)return notFound();if(a.status!=='published'||!eligible(a))return forbidden('Эта активность недоступна для выбранного профиля.');const e=myEnrollments().find(e=>e.activityId===id&&e.status!=='cancelled');return heading('Активность',`${esc(a.format)} · ${esc(a.skill)}`,link('К каталогу','/app/catalog','','grid'))+`<div class="detail-layout"><div class="card"><section class="detail-hero"><div class="tile-icon ${a.color}">${icon('code')}</div><div class="inline-meta">${tag(a.format)}${tag(a.skill,'blue')}${a.id===person().recommended?tag('Рекомендуем для вашей цели','green','sparkles'):''}</div><h1>${esc(a.title)}</h1><p>${esc(a.description)}</p></section><section class="detail-body"><h2>Что вы получите</h2><p>Примените ${esc(a.skill)} на конкретной задаче, получите обратную связь и сохраните результат в своём маршруте развития.</p>${banner('Ожидаемый эффект: <strong>+1 уровень навыка</strong> после проверки практической работы. Запись сама по себе не меняет прогресс.','success')}</section><section class="detail-body"><h2>Программа</h2><ol class="program">${a.program.map((s,i)=>`<li><span class="step-number">${String(i+1).padStart(2,'0')}</span>${esc(s)}</li>`).join('')}</ol></section><section class="detail-body"><h2>Как подтвердить результат</h2><p>После активности опишите, как применили навык, и при необходимости добавьте ссылку на работу. Руководитель проверит результат и даст обратную связь.</p></section><section class="detail-body"><h2>Ведущий</h2><div class="person"><span class="avatar">${initials(a.owner)}</span><div><strong>${esc(a.owner)}</strong><p>Практик и наставник · Alem Team</p></div></div></section></div><aside class="card booking-card"><h2>${e?'Ваша запись':'Присоединиться к активности'}</h2>${e?`<div style="margin-top:15px">${status(e.status)}</div>`:''}<div class="info-list">${infoLine('calendar','Дата и время',`${date(a.date)} · ${time(a.date)}`)}${infoLine('clock','Продолжительность',`${a.hours} часов · ${db.preferences.timezone}`)}${infoLine('pin','Формат участия',a.location)}${infoLine('users','Доступные места',`${places(a)} из ${a.capacity}`)}</div>${e?link('Открыть мою запись','/app/enrollments/'+e.id,'primary wide','arrow'):btn(places(a)?'Записаться':'Встать в лист ожидания','enroll','primary wide','plus',`data-id="${id}"`)}<p>Участие в рамках программы развития</p><div class="info-banner"><p>В демоверсии запись сохраняется на этом устройстве. Внешние уведомления не отправляются.</p></div><p>Отменить участие можно до начала активности.</p></aside></div>`;}
+  function infoLine(ico,label,value){return `<div class="info-line">${icon(ico)}<div><span>${label}</span><strong>${esc(value)}</strong></div></div>`;}
+  function enrollmentsPage(){const groups={all:'Все',active:'Предстоящие',review:'На проверке',completed:'Завершённые',cancelled:'Отменённые'},list=myEnrollments().filter(e=>view.tab==='all'||(view.tab==='active'&&['enrolled','waitlisted','revision'].includes(e.status))||(view.tab==='review'&&e.status==='submitted')||(view.tab==='completed'&&e.status==='verified')||(view.tab==='cancelled'&&e.status==='cancelled'));return heading('Мои активности','Записи, результаты и обратная связь — всё в одном месте.',link('Найти активность','/app/catalog','primary','plus'))+`<nav class="tabs" aria-label="Статус активности">${Object.entries(groups).map(([key,label])=>`<button class="tab ${view.tab===key?'active':''}" data-action="tab" data-tab="${key}" aria-pressed="${view.tab===key}">${label}</button>`).join('')}</nav>${list.length?`<div class="stack">${list.map(e=>{const a=activity(e.activityId);return `<article class="card card-pad"><div class="review-top"><div class="person"><div class="tile-icon ${a.color}">${icon('book')}</div><div><h2>${esc(a.title)}</h2><p class="small muted" style="margin-top:5px">${date(a.date)} · ${time(a.date)} · ${a.hours} ч</p></div></div>${status(e.status)}</div>${e.status==='revision'?banner(esc(e.reviewComment),'warning'):''}<div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap"><span class="small muted">${e.status==='submitted'?'Ожидаем обратную связь руководителя':e.status==='verified'?'Результат подтверждён и учтён в прогрессе':e.status==='waitlisted'?'Сообщим внутри демоверсии, если появится место':'Навык: '+esc(a.skill)}</span>${link(['enrolled','revision'].includes(e.status)?'Добавить результат':'Подробнее','/app/enrollments/'+e.id,'',e.status==='enrolled'?'upload':'arrow')}</div></article>`;}).join('')}</div>`:`<div class="card">${empty('Здесь появятся ваши активности','Выберите подходящий шаг в каталоге. После записи он появится на этой странице.',link('Выбрать активность','/app/catalog','primary','arrow'),'calendar')}</div>`}`;}
+  function enrollmentDetail(id){const e=myEnrollments().find(e=>e.id===id);if(!e)return notFound();const a=activity(e.activityId);return heading('Моя запись',esc(a.title),link('Все активности','/app/enrollments','','calendar'))+`<div class="detail-layout"><div class="stack"><section class="card card-pad"><div class="section-head"><h2>${esc(a.title)}</h2>${status(e.status)}</div><div class="inline-meta"><span>${icon('calendar')}${date(a.date)} · ${time(a.date)}</span><span>${icon('clock')}${a.hours} часов</span></div><div class="timeline"><div class="timeline-step done"><span class="timeline-dot">${icon('check')}</span><h3>Запись ${e.status==='waitlisted'?'в лист ожидания':'создана'}</h3><p>${date(e.createdAt)}</p></div><div class="timeline-step ${['submitted','verified','revision'].includes(e.status)?'done':'current'}"><span class="timeline-dot">2</span><h3>Примените навык и поделитесь результатом</h3><p>Сохраните рабочий пример и кратко опишите свой вклад.</p></div><div class="timeline-step ${e.status==='verified'?'done':e.status==='submitted'?'current':''}"><span class="timeline-dot">${e.status==='verified'?icon('check'):'3'}</span><h3>Обратная связь руководителя</h3><p>${e.status==='verified'?'Результат подтверждён. Прогресс обновлён.':'После проверки результат появится в истории развития.'}</p></div></div></section>${e.reviewComment?`<section class="card card-pad"><h2>Обратная связь</h2><div class="review-evidence">${esc(e.reviewComment)}</div>${status(e.status)}</section>`:''}${['enrolled','revision'].includes(e.status)?`<section class="card card-pad"><h2>Подтверждение результата</h2><p class="small muted" style="margin-top:8px">Опишите задачу, ваше решение и полученный эффект.</p><form id="evidence-form" data-id="${id}" style="margin-top:22px"><div class="field"><label for="evidence">Что удалось применить?</label><textarea id="evidence" name="evidence" required minlength="20" maxlength="3000" placeholder="Например: спроектировала сервис уведомлений, описала компромиссы и получила ревью архитектуры…">${esc(e.evidence||'')}</textarea><small>Не менее 20 символов. Не добавляйте пароли и закрытую информацию.</small></div><div class="field" style="margin-top:20px"><label for="evidence-link">Ссылка на работу <span class="muted">(необязательно)</span></label><input class="input" id="evidence-link" name="link" type="url" placeholder="https://…" value="${esc(e.link||'')}"></div><label class="check-row" style="margin-top:20px"><input type="checkbox" name="consent" required>Я могу делиться этой работой с руководителем.</label><div class="form-actions"><button class="button primary" type="submit">${icon('send')}Отправить на проверку</button></div></form></section>`:e.evidence?`<section class="card card-pad"><h2>Отправленный результат</h2><div class="review-evidence">${esc(e.evidence)}</div>${e.link?safeLink(e.link,'Открыть работу'):''}</section>`:banner(e.status==='cancelled'?'Вы отменили участие. Можно выбрать другую активность в каталоге.':'Вы в листе ожидания. Отправка результата станет доступна после подтверждения места.')}</div><aside class="card booking-card"><h2>Детали участия</h2><div class="info-list">${infoLine('calendar','Дата',`${date(a.date)} · ${time(a.date)}`)}${infoLine('pin','Место',a.location)}${infoLine('user','Ведущий',a.owner)}</div>${btn('Добавить в календарь','calendar','wide','calendar',`data-id="${a.id}"`)}${['enrolled','waitlisted','revision'].includes(e.status)?`<div style="margin-top:12px">${btn('Отменить участие','cancel-enrollment','quiet wide','',`data-id="${e.id}"`)}</div>`:''}<div style="margin-top:20px">${textLink('Настройки напоминаний','/app/settings/notifications')}</div></aside></div>`;}
+  function safeLink(url,label){try{const parsed=new URL(url);if(!['https:','http:'].includes(parsed.protocol))return '';return `<a class="text-link" href="${esc(parsed.href)}" target="_blank" rel="noopener noreferrer">${esc(label)}${icon('external')}</a>`;}catch{return '';}}
