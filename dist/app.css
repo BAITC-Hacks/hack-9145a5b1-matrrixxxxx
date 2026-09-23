@@ -31,7 +31,7 @@ button { cursor: pointer; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(94, 108, 242, .34); outline-offset: 3px; }
 .cq-skip { position: fixed; z-index: 1000; left: 12px; top: -64px; padding: 10px 14px; border-radius: 10px; color: white; background: var(--cq-navy); transition: top .15s ease; }
 .cq-skip:focus { top: 12px; }
-.cq-public { min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 9% 0, #dffbb7 0, transparent 23rem), var(--cq-canvas); }
+.cq-public { min-height: 100vh; overflow-x: hidden; background: radial-gradient(circle at 9% 0, #dffbb7 0, transparent 23rem), var(--cq-canvas); }
 .cq-public-nav { width: min(1180px, calc(100% - 40px)); height: 80px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .cq-brand { display: inline-flex; align-items: center; gap: 11px; font-size: 19px; font-weight: 850; letter-spacing: -.03em; }
 .cq-brand-mark { display: grid; width: 37px; height: 37px; place-items: center; border-radius: 13px; color: var(--cq-navy); background: var(--cq-lime); box-shadow: 0 8px 18px rgba(116, 168, 30, .24); }
