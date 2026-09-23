@@ -48,6 +48,23 @@ function sendCareerError(res, error) {
   const statusByCode = { VALIDATION_ERROR: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409, STORE_CORRUPTED: 500 };
   return sendJson(res, statusByCode[error.code] || 500, { error: error.message, code: error.code });
 }
+function requireCareerActor(req, res) {
+  if (process.env.CAREER_QUEST_DEV_AUTH !== 'true') {
+    sendJson(res, 503, { error: 'Career API выключен. Для локальной разработки задайте CAREER_QUEST_DEV_AUTH=true.', code: 'CAREER_API_DISABLED' });
+    return null;
+  }
+  const actorId = req.headers['x-career-quest-actor'];
+  if (typeof actorId !== 'string' || !actorId) {
+    sendJson(res, 401, { error: 'Передайте x-career-quest-actor для локальной разработки.', code: 'UNAUTHENTICATED' });
+    return null;
+  }
+  try { return careerStore.getActor(actorId); }
+  catch (error) {
+    if (error instanceof CareerStoreError) sendJson(res, 401, { error: 'Неизвестный actor.', code: 'UNAUTHENTICATED' });
+    else throw error;
+    return null;
+  }
+}
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -107,20 +124,61 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
     if (req.method === 'GET' && url.pathname === '/api/v1/bootstrap') {
-      return sendJson(res, 200, careerStore.getBootstrap(url.searchParams.get('employeeId') || 'E0028'));
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      const employeeId = url.searchParams.get('employeeId') || actor.employeeId;
+      try {
+        careerStore.assertCanAccessEmployee(actor, employeeId);
+        return sendJson(res, 200, careerStore.getBootstrap(employeeId));
+      } catch (error) { return sendCareerError(res, error); }
     }
     if (req.method === 'GET' && url.pathname === '/api/v1/activities') {
+      const actor = requireCareerActor(req, res); if (!actor) return;
       const employeeId = url.searchParams.get('employeeId');
       if (!employeeId) return sendJson(res, 400, { error: 'Укажите employeeId', code: 'VALIDATION_ERROR' });
-      return sendJson(res, 200, { activities: careerStore.listActivities(employeeId) });
+      try {
+        careerStore.assertCanAccessEmployee(actor, employeeId);
+        return sendJson(res, 200, { activities: careerStore.listActivities(employeeId) });
+      } catch (error) { return sendCareerError(res, error); }
+    }
+    if (req.method === 'GET' && url.pathname === '/api/v1/hr/activities') {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        careerStore.assertCanManageActivities(actor);
+        return sendJson(res, 200, { activities: careerStore.listAllActivities() });
+      } catch (error) { return sendCareerError(res, error); }
+    }
+    if (req.method === 'POST' && url.pathname === '/api/v1/activities') {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        careerStore.assertCanManageActivities(actor);
+        return sendJson(res, 201, { activity: careerStore.createActivity(await readBody(req)) });
+      } catch (error) { return sendCareerError(res, error); }
+    }
+    const activityMatch = url.pathname.match(/^\/api\/v1\/activities\/([^/]+)$/);
+    if (req.method === 'PATCH' && activityMatch) {
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        careerStore.assertCanManageActivities(actor);
+        return sendJson(res, 200, { activity: careerStore.updateActivity(decodeURIComponent(activityMatch[1]), await readBody(req)) });
+      } catch (error) { return sendCareerError(res, error); }
     }
     if (req.method === 'POST' && url.pathname === '/api/v1/enrollments') {
-      try { return sendJson(res, 201, { enrollment: careerStore.createEnrollment(await readBody(req)) }); }
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        const body = await readBody(req);
+        careerStore.assertCanAccessEmployee(actor, body.employeeId);
+        return sendJson(res, 201, { enrollment: careerStore.createEnrollment(body) });
+      }
       catch (error) { return sendCareerError(res, error); }
     }
     const evidenceMatch = url.pathname.match(/^\/api\/v1\/enrollments\/([^/]+)\/evidence$/);
     if (req.method === 'POST' && evidenceMatch) {
-      try { return sendJson(res, 200, { enrollment: careerStore.submitEvidence(decodeURIComponent(evidenceMatch[1]), await readBody(req)) }); }
+      const actor = requireCareerActor(req, res); if (!actor) return;
+      try {
+        const enrollmentId = decodeURIComponent(evidenceMatch[1]);
+        careerStore.assertCanAccessEmployee(actor, careerStore.getEnrollment(enrollmentId).employeeId);
+        return sendJson(res, 200, { enrollment: careerStore.submitEvidence(enrollmentId, await readBody(req)) });
+      }
       catch (error) { return sendCareerError(res, error); }
     }
     if (req.method === 'POST' && url.pathname === '/api/enrollments') {
