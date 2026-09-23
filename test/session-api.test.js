@@ -7,7 +7,8 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 const test = require('node:test');
-const { seedStore } = require('../lib/career-store');
+const { createCareerStore, seedStore } = require('../lib/career-store');
+const { createTelegramReminderBot } = require('../lib/telegram-reminder-bot');
 
 const TELEGRAM = { token: '123456:session-api-fixture', username: 'CareerQuestRemindBot' };
 
@@ -141,4 +142,46 @@ test('session enrollment derives ownership and protects cancel, calendar, and re
     assert.equal('telegramChatId' in listed.body.enrollments[0], false);
     assert.equal('linkToken' in listed.body.enrollments[0], false);
   });
+});
+
+test('Telegram cancellation calls canonical store and promotes the first waiting employee', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'career-quest-bot-session-'));
+  try {
+    const fixture = seedStore();
+    fixture.sessions.find(item => item.id === 'SES_SYSTEM_DESIGN_OCT').capacity = 1;
+    fixture.employees.push({
+      id: 'E_BOT_WAITLIST', name: 'Тестовый Ожидающий', role: 'Backend Engineer', grade: 'Middle', targetGrade: 'Senior',
+      tenureMonths: 12, readiness: 40, requirements: 'Тест', recommendedActivityId: 'ACT_SYSTEM_DESIGN_LAB',
+      targetSkillLevels: { SK_SYSTEM_DESIGN: 4 }, skills: { SK_SYSTEM_DESIGN: 1 }
+    });
+    fixture.users.push({ id: 'U_EMPLOYEE_E_BOT_WAITLIST', role: 'employee', employeeId: 'E_BOT_WAITLIST' });
+    const careerPath = path.join(directory, 'career-store.json');
+    const reminderPath = path.join(directory, 'reminder-store.json');
+    fs.writeFileSync(careerPath, JSON.stringify(fixture));
+    const careerStore = createCareerStore(careerPath);
+    const enrolled = careerStore.createEnrollment({ employeeId: 'E0028', sessionId: 'SES_SYSTEM_DESIGN_OCT' });
+    const waiting = careerStore.createEnrollment({ employeeId: 'E_BOT_WAITLIST', sessionId: 'SES_SYSTEM_DESIGN_OCT' });
+    fs.writeFileSync(reminderPath, JSON.stringify({
+      enrollments: [{
+        id: 'REMINDER_1', careerEnrollmentId: enrolled.id, activityTitle: 'System Design',
+        occursAt: enrolled.session.startsAt, timezone: enrolled.session.timezone, durationMinutes: 60,
+        status: 'active', telegramChatId: '77', sentReminders: []
+      }]
+    }));
+    const bot = createTelegramReminderBot({
+      storePath: reminderPath,
+      now: () => Date.now(),
+      telegram: async () => true,
+      onCancel: enrollmentId => careerStore.cancelEnrollment(enrollmentId),
+      onConfirm: enrollmentId => careerStore.confirmEnrollment(enrollmentId)
+    });
+    await bot.processUpdate({
+      callback_query: { id: 'cancel', data: 'cancel:REMINDER_1', message: { chat: { id: 77, type: 'private' } } }
+    });
+    assert.equal(careerStore.getEnrollment(enrolled.id).status, 'cancelled');
+    assert.equal(careerStore.getEnrollment(waiting.id).status, 'enrolled');
+    assert.equal(bot.readStore().enrollments[0].status, 'cancelled');
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });

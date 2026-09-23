@@ -10,6 +10,9 @@
   const result = document.getElementById('telegram-result');
   const connections = document.getElementById('telegram-connections');
   const refresh = document.getElementById('telegram-refresh');
+  const available = document.getElementById('telegram-available-session');
+  const book = document.getElementById('telegram-book');
+  const bookingNote = document.getElementById('telegram-booking-note');
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   let data;
   let reminders = [];
@@ -54,6 +57,8 @@
     profile.disabled = value;
     refresh.disabled = value;
     fields.disabled = value || !data || !activity.options.length;
+    available.disabled = value || !data || !available.options.length;
+    book.disabled = available.disabled;
     connections.querySelectorAll('button').forEach(button => { button.disabled = value; });
   }
   function clearLink() { currentLink = null; result.replaceChildren(); result.hidden = true; }
@@ -127,7 +132,16 @@
     fields.disabled = !choices.length;
     fields.hidden = !choices.length;
     service.hidden = choices.length > 0;
-    if (!choices.length) service.textContent = reminders.length ? 'Все доступные записи уже показаны в «Моих подключениях». Для неподключённой записи получите новую ссылку там.' : 'Пока нет записей для подключения. Запишитесь на предстоящую сессию в каталоге, затем вернитесь сюда и обновите статус. Для листа ожидания сначала нужно подтверждение места.';
+    if (!choices.length) service.textContent = reminders.length ? 'Все доступные записи уже показаны в «Моих подключениях». Для неподключённой записи получите новую ссылку там.' : 'Пока нет записей для подключения. Откройте «Выбрать сессию» ниже и запишитесь на мероприятие. Для листа ожидания сначала нужно подтверждение места.';
+    available.replaceChildren();
+    for (const scheduled of data.sessions || []) {
+      if (scheduled.availability !== 'open' || scheduled.status !== 'scheduled' || Date.parse(scheduled.startsAt) <= Date.now()) continue;
+      if (data.enrollments.some(item => item.sessionId === scheduled.id && item.status !== 'cancelled')) continue;
+      const title = data.activities.find(item => item.id === scheduled.activityId)?.title || 'Мероприятие';
+      const option = node('option', `${title} · ${formatDate(scheduled.startsAt, scheduled.timezone)} · ${scheduled.timezone}`);
+      option.value = scheduled.id; available.append(option);
+    }
+    bookingNote.textContent = available.options.length ? 'Расписание и доступность мест задаёт организатор.' : 'Сейчас нет свободных сессий для новой записи. Обновите статус позже.';
   }
   function showSchedule() {
     const selected = data?.enrollments.find(item => item.id === activity.value)?.session;
@@ -185,6 +199,25 @@
     finally { setBusy(false); }
   });
   activity.addEventListener('change', showSchedule);
+  document.getElementById('telegram-booking-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (loading || !data || !available.value || !event.currentTarget.reportValidity()) return;
+    setBusy(true); showError('');
+    try {
+      const { enrollment } = await api('/api/v1/enrollments', { sessionId: available.value });
+      data = await api(`/api/v1/bootstrap?employeeId=${encodeURIComponent(profile.value)}`);
+      fillActivities(enrollment.id);
+      if (enrollment.status === 'waitlisted') {
+        bookingNote.textContent = 'Свободные места закончились: вы в листе ожидания. Ссылка станет доступна после подтверждения места.';
+      } else {
+        document.getElementById('telegram-booking').open = false;
+        service.hidden = false; service.textContent = 'Вы записаны. Теперь подтвердите получение напоминаний и получите одноразовую ссылку.';
+        document.getElementById('telegram-consent').checked = false;
+        activity.focus();
+      }
+    } catch (failure) { showError(failure.message); }
+    finally { setBusy(false); }
+  });
   profile.addEventListener('change', () => { clearLink(); reminders = []; document.getElementById('telegram-consent').checked = false; load(); });
   refresh.addEventListener('click', load);
   window.addEventListener('focus', () => { if (currentLink && !loading) load(); });

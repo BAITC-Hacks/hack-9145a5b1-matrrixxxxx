@@ -6,11 +6,15 @@
 
 ## `GET /api/v1/bootstrap?employeeId=E0028`
 
-Возвращает профиль сотрудника, доступные ему опубликованные activities, его enrollments и progress events. Employee получает только собственный профиль; manager — только прямых подчинённых; HR/Admin — все профили.
+Возвращает профиль сотрудника, доступные ему опубликованные activities, их канонические `sessions`, его enrollments (с вложенными `activity` и `session`) и progress events. Employee получает только собственный профиль; manager — только прямых подчинённых; HR/Admin — все профили.
 
 ## `GET /api/v1/activities?employeeId=E0028`
 
-Возвращает только опубликованные activities, соответствующие роли и grade указанного сотрудника.
+Возвращает только опубликованные activities, соответствующие роли и grade указанного сотрудника. У каждой activity есть вычисляемый список `sessions` с расписанием, местами и доступностью.
+
+## Сессия activity
+
+`GET /api/v1/activities/:activityId?employeeId=E0028` возвращает доступную сотруднику activity и её сессии. Источник истины для записи — именно `session`: `startsAt`, `endsAt`, `timezone`, место, вместимость и дедлайны не принимаются от браузера.
 
 ## HR catalog
 
@@ -18,19 +22,29 @@
 
 Новая activity создаётся в статусе `draft`. HR публикует её отдельным `PATCH` с `{ "status": "published" }`; допустимые статусы — `draft`, `published`, `archived`.
 
-## `POST /api/v1/enrollments`
+## `POST /api/v1/sessions/:sessionId/enrollments`
 
-Создаёт enrollment в статусе `enrolled`.
+Создаёт личную запись сотрудника на конкретную сессию. `employeeId` сервер выводит из development actor; тело не требуется и не может сменить владельца записи.
+
+Если места есть, результат имеет статус `enrolled`; при заполненной сессии с включённым листом ожидания — `waitlisted`. Повторная активная запись на эту же сессию возвращает `409`; нарушение eligibility — `403`.
+
+`POST /api/v1/enrollments` остаётся совместимым alias и принимает только:
 
 ```json
-{ "employeeId": "E0028", "activityId": "ACT_SYSTEM_DESIGN_LAB" }
+{ "sessionId": "SES_SYSTEM_DESIGN_OCT" }
 ```
 
-Возвращает `201`. Повторная активная запись возвращает `409`; нарушение eligibility — `403`.
+`activityId`, дата, часовой пояс и `employeeId` из тела игнорируются или не принимаются: activity выводится из session, а сотрудник — из actor.
+
+## Мои записи, отмена и календарь
+
+- `GET /api/v1/me/enrollments` возвращает только записи текущего сотрудника.
+- `PATCH /api/v1/enrollments/:id/cancel` доступен только владельцу до `cancellationDeadline`. Освобождённое место получает первый сотрудник из листа ожидания; повторная отмена идемпотентна.
+- `GET /api/v1/enrollments/:id/calendar.ics` доступен только владельцу и возвращает `text/calendar` с `DTSTART`/`DTEND` канонической сессии. В development UI файл загружается через `fetch` с actor header, а не через открытую ссылку.
 
 ## `POST /api/v1/enrollments/:id/evidence`
 
-Переводит enrollment из `enrolled`/`in_progress` в `submitted` и сохраняет evidence.
+Переводит enrollment из `enrolled`, `confirmed` или `in_progress` в `submitted` и сохраняет evidence.
 
 ## Проверка результатов
 
@@ -48,8 +62,6 @@
 { "evidence": "Ссылка на результат или краткое описание" }
 ```
 
-Подтверждение менеджером и создание progress event будут добавлены после authentication/RBAC.
-
 ## Связь с Telegram reminders
 
 После успешного `POST /api/v1/enrollments` интерфейс создаёт Telegram reminder через существующий `POST /api/enrollments` и передаёт `careerEnrollmentId`. Reminder record сохраняет эту связь, а Career Quest enrollment получает `reminderEnrollmentId`. Это временный integration bridge до переноса reminder service в основное хранилище.
@@ -57,7 +69,7 @@
 На `/telegram.html` размещены инструкция и форма выдачи ссылки. Ссылки не хранятся в браузере; повторное открытие страницы позволяет выпустить новый код для той же записи.
 
 - `GET /api/telegram/enrollments` — собственные напоминания сотрудника: `{ enrollments: [...] }`. Возвращает статус, `connected` и `linkExpiresAt`; без chat ID, токена и URL привязки.
-- `POST /api/enrollments` — создаёт напоминание для существующей серверной записи. Тело: `careerEnrollmentId`, `employeeId`, `activityId`, `occursAt` (будущая ISO-дата), `timezone`, `channel: "telegram"`. Ответ `201`: `{ id, telegramConnectUrl, linkExpiresAt }`.
+- `POST /api/enrollments` — создаёт напоминание для существующей серверной записи на сессию. Тело: `careerEnrollmentId`, `channel: "telegram"`. Название, расписание и часовой пояс берутся из серверной сессии. Ответ `201`: `{ id, telegramConnectUrl, linkExpiresAt }`.
 - `POST /api/telegram/enrollments/:id/link` — перевыпускает одноразовую ссылку на 24 часа, аннулируя прежнюю. `:id` — ID напоминания. Ответ `200` того же формата; новые записи не создаются.
 
 Эти операции доступны только сотруднику-владельцу. Чужая запись/служебная роль — `403`, отсутствующая запись — `404`, уже подключённое, отменённое или начавшееся мероприятие при перевыпуске — `409`, выключенный или ненастроенный Telegram при выдаче — `503`. Открытие сайта само по себе не выпускает код и не подписывает на уведомления.

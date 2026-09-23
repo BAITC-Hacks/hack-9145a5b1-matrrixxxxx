@@ -49,6 +49,12 @@ test('evidence moves an enrollment to submitted once', () => withStore(store => 
   assert.throws(() => store.submitEvidence(enrollment.id, { evidence: 'Повторная отправка' }), error => error instanceof CareerStoreError && error.code === 'CONFLICT');
 }));
 
+test('a Telegram-confirmed participant can still submit evidence', () => withStore(store => {
+  const enrollment = store.createEnrollment({ employeeId: 'E0028', sessionId: 'SES_SYSTEM_DESIGN_OCT' });
+  assert.equal(store.confirmEnrollment(enrollment.id).status, 'confirmed');
+  assert.equal(store.submitEvidence(enrollment.id, { evidence: 'Подтверждённое участие и результат практикума CQ-42' }).status, 'submitted');
+}));
+
 test('a reminder record can be linked to the persisted enrollment', () => withStore(store => {
   const enrollment = store.createEnrollment({ employeeId: 'E0028', sessionId: 'SES_SYSTEM_DESIGN_OCT' });
   const linked = store.attachReminder(enrollment.id, 'REMINDER-123');
